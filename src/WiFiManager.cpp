@@ -7,6 +7,20 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 
+/**
+ * AP 模式  WiFi 名称
+ */
+const char *ap_wifi_ssid = "ESP8266 e-Paper";
+
+/**
+ * AP 模式  WiFi 密码
+ */
+const char *ap_wifi_password = "12345678";
+
+
+// wifi 信息 保存地址
+const char *save_wifi_config_file = "/wifi_config.json";
+
 //本地 wifi 配置
 WiFiConfigureParameter mWiFiConfig = WiFiConfigureParameter();
 
@@ -34,13 +48,13 @@ bool WiFiManager::onReadWiFiConfigJsonString() {
     }
     // 检查文件是否存在
     if (!LittleFS.exists(save_wifi_config_file)) {
-        Serial.println("文件不存在.");
+        Serial.println("wifi配置 文件不存在.");
         return false;
     }
     // 打开文件
     File file = LittleFS.open(save_wifi_config_file, "r");
     if (!file) {
-        Serial.println("文件打开失败.");
+        Serial.println("wifi配置 文件打开失败.");
         return false;
     }
     file.readString();
@@ -55,4 +69,39 @@ bool WiFiManager::onReadWiFiConfigJsonString() {
 //    } else {
     return false;
 //    }
+}
+
+/**
+ * wifi 连接
+ * @param wifi_ssid wifi 名称
+ * @param wifi_password wifi 密码
+ * @return true 连接成功 false 连接失败
+ */
+bool WiFiManager::onConnectionWiFiChar(char *wifi_ssid, char *wifi_password) {
+    // 连接 wifi
+    WiFi.begin(wifi_ssid, wifi_password);
+    // 等待连接
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        Serial.print(".");
+    }
+    Serial.println("");
+    Serial.println("连接成功.");
+    return true;
+}
+/**
+ * wifi 连接
+ * @param wifi_ssid wifi 名称
+ * @param wifi_password wifi 密码
+ * @return true 连接成功 false 连接失败
+ */
+bool WiFiManager::onConnectionWiFiString(String wifi_ssid, String wifi_password) {
+    //wifi名称
+    char c_wifi_ssid[wifi_ssid.length() + 1];
+    strcpy(c_wifi_ssid, wifi_ssid.c_str());
+    //密码
+    char c_wifi_password[wifi_password.length() + 1];
+    strcpy(c_wifi_password, wifi_password.c_str());
+    //连接wifi
+    return onConnectionWiFiChar(c_wifi_ssid, c_wifi_password);
 }

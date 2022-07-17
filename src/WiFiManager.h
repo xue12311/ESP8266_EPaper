@@ -7,20 +7,6 @@
 
 #include "WString.h"
 
-/**
- * AP 模式  WiFi 名称
- */
-const char *ap_wifi_ssid = "ESP8266 e-Paper";
-
-/**
- * AP 模式  WiFi 密码
- */
-const char *ap_wifi_password = "12345678";
-
-
-// wifi 信息 保存地址
-const char *save_wifi_config_file = "/wifi_config.json";
-
 class WiFiManager {
 public:
     /**
@@ -35,14 +21,29 @@ private:
      * @return true 读取成功  false 读取失败
      */
     bool onReadWiFiConfigJsonString();
-//
+
+    /**
+     * 连接 wifi
+     * @param wifi_ssid wifi 名称
+     * @param wifi_password wifi 密码
+     * @return true 连接成功 false 连接失败
+     */
+    bool onConnectionWiFiChar(char *wifi_ssid, char *wifi_password);
+
+    /**
+        * 连接 wifi
+        * @param wifi_ssid wifi 名称
+        * @param wifi_password wifi 密码
+        * @return true 连接成功 false 连接失败
+        */
+    bool onConnectionWiFiString(String wifi_ssid, String wifi_password);
+
 //    void onSettingsWifiAP();
 //
 //    void onCreateWebServer();
 //
 //    void handleSettingsWiFiRoot();
 //
-//    void onConnectionWiFi(String wifi_ssid, String wifi_password);
 
 };
 
