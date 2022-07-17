@@ -6,6 +6,7 @@
 #include <LittleFS.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
+#include <ArduinoJson.h>
 
 /**
  * AP 模式  WiFi 名称
@@ -234,5 +235,25 @@ bool WiFiManager::onSaveWiFiConfigJson(String json_wifi_config) {
     file.write(json_wifi_config.c_str());
     file.close();
     Serial.println("wifi 配置保存成功.");
+//
+//    StaticJsonDocument<384> doc;
+//
+//    DeserializationError error = deserializeJson(doc, input);
+//
+//    if (error) {
+//        Serial.print(F("deserializeJson() failed: "));
+//        Serial.println(error.f_str());
+//        return;
+//    }
+//
+//    int code = doc["code"]; // 200
+//    const char* msg = doc["msg"]; // "wifi 连接成功"
+//
+//    JsonObject data = doc["data"];
+//    const char* data_wifi_ssid = data["wifi_ssid"]; // "public void main () {}"
+//    const char* data_wifi_password = data["wifi_password"]; // "zhangjiaxue"
+//    const char* data_wifi_local_ip = data["wifi_local_ip"]; // "192.168.0.11"
+//    const char* data_device_mac = data["device_mac"]; // "84:F3:EB:A5:D0:44"
+
     return true;
 }
