@@ -121,7 +121,7 @@ bool WiFiManager::onReadWiFiConfigJsonString() {
    * @return true 连接成功 false 连接失败
    */
 bool WiFiManager::onJsonWiFiConfigAndConnectionWiFi(String json) {
-
+    return true;
 }
 
 /**
