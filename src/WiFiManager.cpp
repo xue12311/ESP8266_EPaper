@@ -50,7 +50,6 @@ bool WiFiManager::onConnectWiFiConfigJson() {
  */
 void WiFiManager::onWebServerLoop() {
     if (WiFi.getMode() == WIFI_AP && !WiFi.isConnected()) {
-        Serial.println("检查 web 服务器 访问");
         // 检查http服务器访问
         webServer.handleClient();
     }
@@ -105,18 +104,24 @@ bool WiFiManager::onReadWiFiConfigJsonString() {
         Serial.println("wifi配置 文件打开失败.");
         return false;
     }
-    file.readString();
-    // char *json;
-    while (file.available()) {
-//        json += file.read();
-        Serial.write(file.read());
-    }
+    // 读取文件内容
+    String jsonString = file.readString();
+    Serial.println("wifi 缓存 配置 JSON : " + jsonString);
     file.close();
-//    Serial.println("wifi json 为 : " );
-//    if (json.size() > 0) {
-//    } else {
-    return false;
-//    }
+    if (jsonString.length() > 0) {
+        return onJsonWiFiConfigAndConnectionWiFi(jsonString);
+    } else {
+        return false;
+    }
+}
+
+/**
+   * 解析 本地 json 并 尝试连接 wifi
+   * @param json 本地缓存
+   * @return true 连接成功 false 连接失败
+   */
+bool WiFiManager::onJsonWiFiConfigAndConnectionWiFi(String json) {
+
 }
 
 /**
@@ -176,6 +181,8 @@ bool WiFiManager::onCreateWebServer() {
         //保存 wifi 配置
         if (isWiFiConnectionSucceeded) {
             webServer.stop();
+            //保存 wifi 配置
+            onSaveWiFiConfigJson(json);
         }
     });
     //处理404情况
@@ -215,4 +222,17 @@ String WiFiManager::getWiFiConnectWebRequestJson(String wifi_ssid, String wifi_p
     json += "\"device_mac\":\"" + WiFi.macAddress() + "\"";
     json += "}}";
     return json;
+}
+
+bool WiFiManager::onSaveWiFiConfigJson(String json_wifi_config) {
+    // 启动 LittleFS
+    if (!LittleFS.begin()) {
+        Serial.println("LittleFS 启用失败.");
+        return false;
+    }
+    File file = LittleFS.open(save_wifi_config_file, "w");
+    file.write(json_wifi_config.c_str());
+    file.close();
+    Serial.println("wifi 配置保存成功.");
+    return true;
 }

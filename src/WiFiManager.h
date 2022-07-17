@@ -32,6 +32,13 @@ private:
     bool onReadWiFiConfigJsonString();
 
     /**
+     * 解析 本地 json 并 尝试连接 wifi
+     * @param json 本地缓存
+     * @return
+     */
+    bool onJsonWiFiConfigAndConnectionWiFi(String json);
+
+    /**
      * 连接 wifi
      * @param wifi_ssid wifi 名称
      * @param wifi_password wifi 密码
@@ -68,6 +75,12 @@ private:
   * @return json
   */
     String getWiFiConnectWebRequestJson(String wifi_ssid, String wifi_password, bool isSuccess);
+
+    /**
+     * 保存 wifi 配置
+     * @param json_wifi_config wifi配置
+     */
+    bool onSaveWiFiConfigJson(String json_wifi_config);
 };
 
 
