@@ -21,6 +21,14 @@ const char *ap_wifi_password = "12345678";
 // wifi 信息 保存地址
 const char *save_wifi_config_file = "/wifi_config.json";
 
+//wifi 连接 超时时间 为 10 秒
+const long wifi_connect_timed_out_time = 5 * 1000;
+
+// 建立ESP8266WebServer对象，对象名称为esp8266_server
+// 括号中的数字是网路服务器响应http请求的端口号
+// 网络服务器标准http端口号为80，因此这里使用80为端口号
+ESP8266WebServer webServer(80);
+
 //本地 wifi 配置
 WiFiConfigureParameter mWiFiConfig = WiFiConfigureParameter();
 
@@ -31,9 +39,49 @@ WiFiConfigureParameter mWiFiConfig = WiFiConfigureParameter();
 bool WiFiManager::onConnectWiFiConfigJson() {
     //判断 wifi 配置 是否有效
     if (onReadWiFiConfigJsonString() && mWiFiConfig.isValid()) {
-        return true;
+        //连接 wifi
+        return onConnectionWiFiChar(mWiFiConfig.getSSID(), mWiFiConfig.getPassword());
     }
     return false;
+}
+
+/**
+ * 循环 wifi 配置
+ */
+void WiFiManager::onWebServerLoop() {
+    if (WiFi.getMode() == WIFI_AP && !WiFi.isConnected()) {
+        Serial.println("检查 web 服务器 访问");
+        // 检查http服务器访问
+        webServer.handleClient();
+    }
+}
+
+/**
+ * 设置 wifi 为 AP 模式,并启用网络服务
+ * @return
+ */
+bool WiFiManager::onStartWiFiAPAndWebServer() {
+    //设置 wifi 为 AP 模式
+    if (onSettingsWifiAP()) {
+        //启用 网络服务 用来 接收 wifi 配置 的 http 请求
+        return onCreateWebServer();
+    }
+    return false;
+}
+
+/**
+     * 设置 wifi 为 AP模式 接入点模式
+     * 设置 wifi名称 密码
+     * @return 是否设置成功  true 设置成功 false 设置失败
+     */
+bool WiFiManager::onSettingsWifiAP() {
+    //设置为 AP 模式
+    WiFi.mode(WIFI_AP);
+    bool isSuccess = WiFi.softAP(ap_wifi_ssid, ap_wifi_password);
+    Serial.println("wifi 名称 : " + String(ap_wifi_ssid));
+    Serial.println("wifi 密码 : " + String(ap_wifi_password));
+    Serial.println("wifi Ip地址 : " + WiFi.softAPIP().toString());
+    return isSuccess;
 }
 
 /**
@@ -80,15 +128,15 @@ bool WiFiManager::onReadWiFiConfigJsonString() {
 bool WiFiManager::onConnectionWiFiChar(char *wifi_ssid, char *wifi_password) {
     // 连接 wifi
     WiFi.begin(wifi_ssid, wifi_password);
-    // 等待连接
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        Serial.print(".");
+    //等待 WiFi 连接结果
+    if (WiFi.waitForConnectResult(wifi_connect_timed_out_time) != WL_CONNECTED) {
+        Serial.println("wifi 连接失败.");
+        return false;
     }
-    Serial.println("");
-    Serial.println("连接成功.");
+    Serial.println("WiFi 连接成功.");
     return true;
 }
+
 /**
  * wifi 连接
  * @param wifi_ssid wifi 名称
@@ -104,4 +152,67 @@ bool WiFiManager::onConnectionWiFiString(String wifi_ssid, String wifi_password)
     strcpy(c_wifi_password, wifi_password.c_str());
     //连接wifi
     return onConnectionWiFiChar(c_wifi_ssid, c_wifi_password);
+}
+
+/**
+  * 启用 网络服务 用来 接收 wifi 配置
+  */
+bool WiFiManager::onCreateWebServer() {
+    //启动网络服务功能
+    webServer.begin();
+//    webServer.keepAlive(true);
+    //设置wifi配置
+    webServer.on("/settings_wifi", HTTP_GET, [this]() {
+        //接收 接口中的 wifi 配置信息
+        String ssid = webServer.arg("wifi_ssid");
+        String password = webServer.arg("wifi_password");
+        Serial.println("收到请求参数 ssid: " + ssid + " password: " + password);
+        //wifi 连接成功
+        bool isWiFiConnectionSucceeded = onConnectionWiFiString(ssid, password);
+        //请求响应 json
+        String json = getWiFiConnectWebRequestJson(ssid, password, isWiFiConnectionSucceeded);
+        Serial.println("请求响应 :" + json);
+        webServer.send(200, "application/json", json);
+        //保存 wifi 配置
+        if (isWiFiConnectionSucceeded) {
+            webServer.stop();
+        }
+    });
+    //处理404情况
+    webServer.onNotFound([]() {
+        String json = "{\"code\":404,\"msg\":\"404错误 请求失败,请重试!\"}";
+        Serial.println("请求响应 :" + json);
+        webServer.send(404, "application/json", json);
+    });
+    webServer.begin();
+    Serial.println("网络服务器启动成功.");
+    return true;
+}
+
+
+/**
+  * 响应 wifi连接 请求
+  * @param wifi_ssid  wifi 名称
+  * @param wifi_password   wifi 密码
+  * @param isSuccess  true: wifi 连接成功 false: wifi 连接失败
+  * @return json
+  */
+String WiFiManager::getWiFiConnectWebRequestJson(String wifi_ssid, String wifi_password, bool isSuccess) {
+    String json = "{";
+    if (isSuccess) {
+        json += "\"code\":200,";
+        json += "\"msg\":\"wifi 连接成功\",";
+    } else {
+        json += "\"code\":201,";
+        json += "\"msg\":\"wifi 连接失败,请重试!\",";
+    }
+    json += "\"data\":{";
+    json += "\"wifi_ssid\":\"" + wifi_ssid + "\",";
+    json += "\"wifi_password\":\"" + wifi_password + "\",";
+    if (isSuccess) {
+        json += "\"wifi_local_ip\":\"" + WiFi.localIP().toString() + "\",";
+    }
+    json += "\"device_mac\":\"" + WiFi.macAddress() + "\"";
+    json += "}}";
+    return json;
 }
