@@ -32,11 +32,11 @@ private:
     bool onReadWiFiConfigJsonString();
 
     /**
-     * 解析 本地 json 并 尝试连接 wifi
-     * @param json 本地缓存
+     * WiFi配置 解析 json
+     * @param json
      * @return
      */
-    bool onJsonWiFiConfigAndConnectionWiFi(String json);
+    bool onJsonWiFiConfig(String json);
 
     /**
      * 连接 wifi
@@ -81,6 +81,8 @@ private:
      * @param json_wifi_config wifi配置
      */
     bool onSaveWiFiConfigJson(String json_wifi_config);
+
+
 };
 
 

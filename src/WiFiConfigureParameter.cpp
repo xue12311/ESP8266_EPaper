@@ -25,6 +25,23 @@ WiFiConfigureParameter::WiFiConfigureParameter() {
     wifi_password = NULL;
 }
 
+
+void WiFiConfigureParameter::saveWiFiConfigure(char *ssid, char *password) {
+    wifi_ssid = ssid;
+    wifi_password = password;
+}
+
+void WiFiConfigureParameter::saveWiFiConfigure(String ssid, String password) {
+    //wifi名称
+    char c_wifi_ssid[ssid.length() + 1];
+    strcpy(c_wifi_ssid, ssid.c_str());
+    wifi_ssid = c_wifi_ssid;
+    //密码
+    char c_wifi_password[password.length() + 1];
+    strcpy(c_wifi_password, password.c_str());
+    wifi_password = c_wifi_password;
+}
+
 bool WiFiConfigureParameter::isValid() {
     if (wifi_ssid == NULL || wifi_password == NULL) {
         return false;
@@ -52,6 +69,7 @@ String WiFiConfigureParameter::getSSIDString() {
 char *WiFiConfigureParameter::getPassword() {
     return wifi_password;
 }
+
 /**
 * 获取 wifi 密码
 */

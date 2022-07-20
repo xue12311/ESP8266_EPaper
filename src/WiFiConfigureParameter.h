@@ -16,6 +16,14 @@ public:
     WiFiConfigureParameter();
 
     /**
+     * 保存 wifi 参数
+     * @param ssid
+     * @param password
+     */
+    void saveWiFiConfigure(char *ssid, char *password);
+    void saveWiFiConfigure(String ssid, String password);
+
+    /**
      * 是否有效
      * @return true 有效 false 无效
      */

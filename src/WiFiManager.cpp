@@ -30,6 +30,9 @@ const long wifi_connect_timed_out_time = 5 * 1000;
 // 网络服务器标准http端口号为80，因此这里使用80为端口号
 ESP8266WebServer webServer(80);
 
+// ESP8266 WebServer 是否已经启用
+bool isWebServerEnable = false;
+
 //本地 wifi 配置
 WiFiConfigureParameter mWiFiConfig = WiFiConfigureParameter();
 
@@ -50,7 +53,7 @@ bool WiFiManager::onConnectWiFiConfigJson() {
  * 循环 wifi 配置
  */
 void WiFiManager::onWebServerLoop() {
-    if (WiFi.getMode() == WIFI_AP && !WiFi.isConnected()) {
+    if(isWebServerEnable){
         // 检查http服务器访问
         webServer.handleClient();
     }
@@ -61,6 +64,7 @@ void WiFiManager::onWebServerLoop() {
  * @return
  */
 bool WiFiManager::onStartWiFiAPAndWebServer() {
+    isWebServerEnable = false;
     //设置 wifi 为 AP 模式
     if (onSettingsWifiAP()) {
         //启用 网络服务 用来 接收 wifi 配置 的 http 请求
@@ -110,19 +114,43 @@ bool WiFiManager::onReadWiFiConfigJsonString() {
     Serial.println("wifi 缓存 配置 JSON : " + jsonString);
     file.close();
     if (jsonString.length() > 0) {
-        return onJsonWiFiConfigAndConnectionWiFi(jsonString);
+        return onJsonWiFiConfig(jsonString);
     } else {
         return false;
     }
 }
 
 /**
-   * 解析 本地 json 并 尝试连接 wifi
-   * @param json 本地缓存
-   * @return true 连接成功 false 连接失败
-   */
-bool WiFiManager::onJsonWiFiConfigAndConnectionWiFi(String json) {
-    return true;
+ * 解析 wifi 配置 json
+ * @param json
+ * @return
+ */
+bool WiFiManager::onJsonWiFiConfig(String json) {
+    StaticJsonDocument<500> doc;
+    DeserializationError error = deserializeJson(doc, json);
+    if (error) {
+        Serial.println("json 解析失败 : ");
+        Serial.println(error.f_str());
+        return false;
+    }
+    //请求返回 状态码
+    int code = doc["code"].as<int>(); // 200
+    Serial.println("json 解析  code 状态码 : " + String(code));
+    //请求成功
+    if (code == 200) {
+        //数据详情
+        JsonObject data = doc["data"];
+        if (!doc["data"].isNull()) {
+            String data_wifi_ssid = data["wifi_ssid"].as<String>();
+            String data_wifi_password = data["wifi_password"].as<String>();
+            //设置 wifi 配置
+            mWiFiConfig.saveWiFiConfigure(data_wifi_ssid, data_wifi_password);
+            Serial.println("json 解析 wifi名称 : " + data_wifi_ssid);
+            Serial.println("json 解析 wifi密码 : " + data_wifi_password);
+            return true;
+        }
+    }
+    return false;
 }
 
 /**
@@ -182,6 +210,8 @@ bool WiFiManager::onCreateWebServer() {
         //保存 wifi 配置
         if (isWiFiConnectionSucceeded) {
             webServer.stop();
+            //停用 Web Server
+            isWebServerEnable = false;
             //保存 wifi 配置
             onSaveWiFiConfigJson(json);
         }
@@ -193,6 +223,7 @@ bool WiFiManager::onCreateWebServer() {
         webServer.send(404, "application/json", json);
     });
     webServer.begin();
+    isWebServerEnable = true;
     Serial.println("网络服务器启动成功.");
     return true;
 }
@@ -235,25 +266,5 @@ bool WiFiManager::onSaveWiFiConfigJson(String json_wifi_config) {
     file.write(json_wifi_config.c_str());
     file.close();
     Serial.println("wifi 配置保存成功.");
-//
-//    StaticJsonDocument<384> doc;
-//
-//    DeserializationError error = deserializeJson(doc, input);
-//
-//    if (error) {
-//        Serial.print(F("deserializeJson() failed: "));
-//        Serial.println(error.f_str());
-//        return;
-//    }
-//
-//    int code = doc["code"]; // 200
-//    const char* msg = doc["msg"]; // "wifi 连接成功"
-//
-//    JsonObject data = doc["data"];
-//    const char* data_wifi_ssid = data["wifi_ssid"]; // "public void main () {}"
-//    const char* data_wifi_password = data["wifi_password"]; // "zhangjiaxue"
-//    const char* data_wifi_local_ip = data["wifi_local_ip"]; // "192.168.0.11"
-//    const char* data_device_mac = data["device_mac"]; // "84:F3:EB:A5:D0:44"
-
     return true;
 }
