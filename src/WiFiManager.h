@@ -56,6 +56,17 @@ private:
 
 
     /**
+     * 获取当前 wifi连接状态
+     * @return
+     */
+    String getWiFiStatusString();
+
+    /**
+     * 获取当前扫描到的 wifi 列表
+     * @return
+     */
+
+    /**
      * 设置 wifi 为 AP模式 接入点模式
      * 设置 wifi名称 密码
      * @return 是否设置成功  true 设置成功 false 设置失败

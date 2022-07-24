@@ -9,6 +9,19 @@
 #include <ArduinoJson.h>
 
 /**
+ * AP 模式  WiFi 的 ip地址
+ */
+IPAddress wifi_ap_local_ip(192, 168, 4, 22);
+/**
+ * AP 模式  WiFi 的 网关IP地址
+ */
+IPAddress wifi_ap_gateway(192, 168, 4, 9);
+/**
+ * AP 模式  WiFi 的 子网掩码
+ */
+IPAddress wifi_ap_subnet(255, 255, 255, 0);
+
+/**
  * AP 模式  WiFi 名称
  */
 const char *ap_wifi_ssid = "ESP8266 e-Paper";
@@ -22,8 +35,8 @@ const char *ap_wifi_password = "12345678";
 // wifi 信息 保存地址
 const char *save_wifi_config_file = "/wifi_config.json";
 
-//wifi 连接 超时时间 为 10 秒
-const long wifi_connect_timed_out_time = 5 * 1000;
+//wifi 连接 超时时间 为 15 秒
+const long wifi_connect_timed_out_time = 15 * 1000;
 
 // 建立ESP8266WebServer对象，对象名称为esp8266_server
 // 括号中的数字是网路服务器响应http请求的端口号
@@ -53,7 +66,7 @@ bool WiFiManager::onConnectWiFiConfigJson() {
  * 循环 wifi 配置
  */
 void WiFiManager::onWebServerLoop() {
-    if(isWebServerEnable){
+    if (isWebServerEnable) {
         // 检查http服务器访问
         webServer.handleClient();
     }
@@ -81,10 +94,15 @@ bool WiFiManager::onStartWiFiAPAndWebServer() {
 bool WiFiManager::onSettingsWifiAP() {
     //设置为 AP 模式
     WiFi.mode(WIFI_AP);
+    //配置接入点的IP，网关IP，子网掩码
+    WiFi.softAPConfig(wifi_ap_local_ip, wifi_ap_gateway, wifi_ap_subnet);
     bool isSuccess = WiFi.softAP(ap_wifi_ssid, ap_wifi_password);
     Serial.println("wifi 名称 : " + String(ap_wifi_ssid));
     Serial.println("wifi 密码 : " + String(ap_wifi_password));
     Serial.println("wifi Ip地址 : " + WiFi.softAPIP().toString());
+    Serial.println("网络IP :" + wifi_ap_local_ip.toString());
+    Serial.println("网关IP :" + wifi_ap_gateway.toString());
+    Serial.println("子网掩码 :" + wifi_ap_subnet.toString());
     return isSuccess;
 }
 
@@ -154,20 +172,58 @@ bool WiFiManager::onJsonWiFiConfig(String json) {
 }
 
 /**
+ * 获取 wifi 当前状态
+ * @return
+ */
+String WiFiManager::getWiFiStatusString() {
+    if (WiFi.status() == WL_CONNECTED) {
+        return "wifi 连接成功";
+    } else if (WiFi.status() == WL_CONNECT_FAILED) {
+        return "wifi 连接失败";
+    } else if (WiFi.status() == WL_CONNECTION_LOST) {
+        return "wifi 连接丢失";
+    } else if (WiFi.status() == WL_DISCONNECTED) {
+        return "wifi 未连接";
+    } else if (WiFi.status() == WL_NO_SSID_AVAIL) {
+        return "wifi 没有找到设定的SSID的网络";
+    } else if (WiFi.status() == WL_IDLE_STATUS) {
+        return "wifi 正在尝试连接";
+    } else if (WiFi.status() == WL_SCAN_COMPLETED) {
+        return "wifi 网络扫描完毕";
+    } else if (WiFi.status() == WL_NO_SHIELD) {
+        return "wifi 没有找到可用设备";
+    } else {
+        return "wifi 未知状态";
+    }
+}
+
+/**
  * wifi 连接
  * @param wifi_ssid wifi 名称
  * @param wifi_password wifi 密码
  * @return true 连接成功 false 连接失败
  */
 bool WiFiManager::onConnectionWiFiChar(char *wifi_ssid, char *wifi_password) {
+    //设置为 STA 模式
+    WiFi.mode(WIFI_STA);
+    Serial.println("当前wifi连接状态: " + getWiFiStatusString());
     // 连接 wifi
     WiFi.begin(wifi_ssid, wifi_password);
-    //等待 WiFi 连接结果
-    if (WiFi.waitForConnectResult(wifi_connect_timed_out_time) != WL_CONNECTED) {
-        Serial.println("wifi 连接失败.");
-        return false;
+    Serial.println("wifi 连接中");
+    int count_time = 0;
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        count_time += 500;
+        Serial.println("当前wifi连接状态: " + getWiFiStatusString());
+//        Serial.print(".");
+        if (count_time > wifi_connect_timed_out_time) {
+//            Serial.println("");
+            Serial.println("wifi 连接失败");
+            return false;
+        }
     }
-    Serial.println("WiFi 连接成功.");
+//    Serial.println("");
+    Serial.println("wifi 连接成功");
     return true;
 }
 
@@ -209,6 +265,9 @@ bool WiFiManager::onCreateWebServer() {
         webServer.send(200, "application/json", json);
         //保存 wifi 配置
         if (isWiFiConnectionSucceeded) {
+            //关闭 wifi 接入点模式
+            WiFi.softAPdisconnect(true);
+            //停用 Web Server
             webServer.stop();
             //停用 Web Server
             isWebServerEnable = false;
