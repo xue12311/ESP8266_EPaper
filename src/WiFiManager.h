@@ -5,7 +5,9 @@
 #ifndef ESP8266_EPAPER_WIFIMANAGER_H
 #define ESP8266_EPAPER_WIFIMANAGER_H
 
+#include "ArduinoJson.h"
 #include "WString.h"
+#include "WiFiScanConfigureParametric.h"
 
 class WiFiManager {
 public:
@@ -54,6 +56,11 @@ private:
         */
     bool onConnectionWiFiString(String wifi_ssid, String wifi_password);
 
+    /**
+     * 能否成功扫描到指定 wifi
+     * @return true 扫描到指定wifi ; false 没有扫描到指定wifi
+     */
+    bool isSuccessfulScanWiFi(char *wifi_ssid);
 
     /**
      * 获取当前 wifi连接状态
@@ -65,6 +72,7 @@ private:
      * 获取当前扫描到的 wifi 列表
      * @return
      */
+//    JsonArray getWiFiScanList();
 
     /**
      * 设置 wifi 为 AP模式 接入点模式

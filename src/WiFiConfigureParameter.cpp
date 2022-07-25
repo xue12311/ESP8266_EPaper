@@ -40,6 +40,7 @@ void WiFiConfigureParameter::saveWiFiConfigure(String ssid, String password) {
     char c_wifi_password[password.length() + 1];
     strcpy(c_wifi_password, password.c_str());
     wifi_password = c_wifi_password;
+
 }
 
 bool WiFiConfigureParameter::isValid() {

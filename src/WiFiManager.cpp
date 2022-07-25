@@ -2,11 +2,13 @@
 // WiFi 管理
 //
 #include <WiFiConfigureParameter.h>
+#include <WiFiScanConfigureParametric.h>
 #include <WiFiManager.h>
 #include <LittleFS.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <ArduinoJson.h>
+#include <list>
 
 /**
  * AP 模式  WiFi 的 ip地址
@@ -56,6 +58,8 @@ WiFiConfigureParameter mWiFiConfig = WiFiConfigureParameter();
 bool WiFiManager::onConnectWiFiConfigJson() {
     //判断 wifi 配置 是否有效
     if (onReadWiFiConfigJsonString() && mWiFiConfig.isValid()) {
+        //设置为 STA 模式
+        WiFi.mode(WIFI_STA);
         //连接 wifi
         return onConnectionWiFiChar(mWiFiConfig.getSSID(), mWiFiConfig.getPassword());
     }
@@ -92,8 +96,8 @@ bool WiFiManager::onStartWiFiAPAndWebServer() {
      * @return 是否设置成功  true 设置成功 false 设置失败
      */
 bool WiFiManager::onSettingsWifiAP() {
-    //设置为 AP 模式
-    WiFi.mode(WIFI_AP);
+    //设置为 AP_STA 模式
+    WiFi.mode(WIFI_AP_STA);
     //配置接入点的IP，网关IP，子网掩码
     WiFi.softAPConfig(wifi_ap_local_ip, wifi_ap_gateway, wifi_ap_subnet);
     bool isSuccess = WiFi.softAP(ap_wifi_ssid, ap_wifi_password);
@@ -164,12 +168,47 @@ bool WiFiManager::onJsonWiFiConfig(String json) {
             //设置 wifi 配置
             mWiFiConfig.saveWiFiConfigure(data_wifi_ssid, data_wifi_password);
             Serial.println("json 解析 wifi名称 : " + data_wifi_ssid);
+            Serial.print("WiFiConfigureParameter wifi名称 : ");
+            Serial.println(mWiFiConfig.getSSID());
             Serial.println("json 解析 wifi密码 : " + data_wifi_password);
+            Serial.print("WiFiConfigureParameter wifi密码 : ");
+            Serial.println(mWiFiConfig.getPassword());
             return true;
         }
     }
     return false;
 }
+
+/**
+ * 判断 是否扫描到 指定 wifi
+ * @param wifi_ssid  指定 wifi 名称
+ * @return true 扫描到指定 wifi false 没有扫描到指定 wifi
+ */
+bool WiFiManager::isSuccessfulScanWiFi(char *wifi_ssid) {
+    int n = WiFi.scanNetworks();
+    if (n > 0) {
+        for (int i = 0; i < n; i++) {
+            if (WiFi.SSID(i).equals("public void main () {}")) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+void getWiFiScanList() {
+    int n = WiFi.scanNetworks();
+    if (n <= 0) {
+        Serial.println("未扫描到附件WiFi");
+    } else {
+        for (int i = 0; i < n; i++) {
+            String ssid = WiFi.SSID(i);
+            int rssi = WiFi.RSSI(i);
+            Serial.println("WiFi 扫描 SSID: " + ssid + " RSSI: " + String(rssi));
+        }
+    }
+}
+
 
 /**
  * 获取 wifi 当前状态
@@ -204,8 +243,10 @@ String WiFiManager::getWiFiStatusString() {
  * @return true 连接成功 false 连接失败
  */
 bool WiFiManager::onConnectionWiFiChar(char *wifi_ssid, char *wifi_password) {
-    //设置为 STA 模式
-    WiFi.mode(WIFI_STA);
+    if (!isSuccessfulScanWiFi(wifi_ssid)) {
+        Serial.println("未扫描到指定 wifi");
+        return false;
+    }
     Serial.println("当前wifi连接状态: " + getWiFiStatusString());
     // 连接 wifi
     WiFi.begin(wifi_ssid, wifi_password);
@@ -265,6 +306,7 @@ bool WiFiManager::onCreateWebServer() {
         webServer.send(200, "application/json", json);
         //保存 wifi 配置
         if (isWiFiConnectionSucceeded) {
+            Serial.println("关闭 wifi 网络服务");
             //关闭 wifi 接入点模式
             WiFi.softAPdisconnect(true);
             //停用 Web Server

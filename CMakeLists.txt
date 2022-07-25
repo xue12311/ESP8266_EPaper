@@ -14,8 +14,6 @@ project("ESP8266_EPaper" C CXX)
 
 include(CMakeListsPrivate.txt)
 
-include_directories(".pio/libdeps/nodemcu/ArduinoJson/src")
-
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/CMakeListsUser.txt)
 include(CMakeListsUser.txt)
 endif()
