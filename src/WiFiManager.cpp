@@ -2,7 +2,6 @@
 // WiFi 管理
 //
 #include <WiFiConfigureParameter.h>
-#include <WiFiScanConfigureParametric.h>
 #include <WiFiManager.h>
 #include <LittleFS.h>
 #include <ESP8266WiFi.h>
@@ -61,7 +60,7 @@ bool WiFiManager::onConnectWiFiConfigJson() {
         //设置为 STA 模式
         WiFi.mode(WIFI_STA);
         //连接 wifi
-        return onConnectionWiFiChar(mWiFiConfig.getSSID(), mWiFiConfig.getPassword());
+        return onConnectionWiFiString(mWiFiConfig.getSSIDString(), mWiFiConfig.getPasswordString());
     }
     return false;
 }
@@ -168,11 +167,7 @@ bool WiFiManager::onJsonWiFiConfig(String json) {
             //设置 wifi 配置
             mWiFiConfig.saveWiFiConfigure(data_wifi_ssid, data_wifi_password);
             Serial.println("json 解析 wifi名称 : " + data_wifi_ssid);
-            Serial.print("WiFiConfigureParameter wifi名称 : ");
-            Serial.println(mWiFiConfig.getSSID());
             Serial.println("json 解析 wifi密码 : " + data_wifi_password);
-            Serial.print("WiFiConfigureParameter wifi密码 : ");
-            Serial.println(mWiFiConfig.getPassword());
             return true;
         }
     }
@@ -184,12 +179,14 @@ bool WiFiManager::onJsonWiFiConfig(String json) {
  * @param wifi_ssid  指定 wifi 名称
  * @return true 扫描到指定 wifi false 没有扫描到指定 wifi
  */
-bool WiFiManager::isSuccessfulScanWiFi(char *wifi_ssid) {
+bool WiFiManager::isSuccessfulScanWiFi(String wifi_ssid) {
     int n = WiFi.scanNetworks();
     if (n > 0) {
         for (int i = 0; i < n; i++) {
-            if (WiFi.SSID(i).equals("public void main () {}")) {
-                return true;
+            if (wifi_ssid != nullptr && wifi_ssid.length() > 0) {
+                if (WiFi.SSID(i).equals(wifi_ssid)) {
+                    return true;
+                }
             }
         }
     }
@@ -242,28 +239,26 @@ String WiFiManager::getWiFiStatusString() {
  * @param wifi_password wifi 密码
  * @return true 连接成功 false 连接失败
  */
-bool WiFiManager::onConnectionWiFiChar(char *wifi_ssid, char *wifi_password) {
+bool WiFiManager::onConnectionWiFiChar(const char *wifi_ssid, const char *wifi_password) {
     if (!isSuccessfulScanWiFi(wifi_ssid)) {
         Serial.println("未扫描到指定 wifi");
         return false;
     }
-    Serial.println("当前wifi连接状态: " + getWiFiStatusString());
     // 连接 wifi
     WiFi.begin(wifi_ssid, wifi_password);
-    Serial.println("wifi 连接中");
+    Serial.print("wifi 连接中");
     int count_time = 0;
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
         count_time += 500;
-        Serial.println("当前wifi连接状态: " + getWiFiStatusString());
-//        Serial.print(".");
+        Serial.print(".");
         if (count_time > wifi_connect_timed_out_time) {
-//            Serial.println("");
+            Serial.println("");
             Serial.println("wifi 连接失败");
             return false;
         }
     }
-//    Serial.println("");
+    Serial.println("");
     Serial.println("wifi 连接成功");
     return true;
 }
@@ -274,15 +269,8 @@ bool WiFiManager::onConnectionWiFiChar(char *wifi_ssid, char *wifi_password) {
  * @param wifi_password wifi 密码
  * @return true 连接成功 false 连接失败
  */
-bool WiFiManager::onConnectionWiFiString(String wifi_ssid, String wifi_password) {
-    //wifi名称
-    char c_wifi_ssid[wifi_ssid.length() + 1];
-    strcpy(c_wifi_ssid, wifi_ssid.c_str());
-    //密码
-    char c_wifi_password[wifi_password.length() + 1];
-    strcpy(c_wifi_password, wifi_password.c_str());
-    //连接wifi
-    return onConnectionWiFiChar(c_wifi_ssid, c_wifi_password);
+bool WiFiManager::onConnectionWiFiString(const String wifi_ssid, String wifi_password) {
+    return onConnectionWiFiChar(wifi_ssid.c_str(), wifi_password.c_str());
 }
 
 /**
@@ -344,7 +332,9 @@ String WiFiManager::getWiFiConnectWebRequestJson(String wifi_ssid, String wifi_p
         json += "\"msg\":\"wifi 连接成功\",";
     } else {
         json += "\"code\":201,";
-        json += "\"msg\":\"wifi 连接失败,请重试!\",";
+        json += "\"msg\":\"";
+        json += getWiFiStatusString();
+        json += ",请重试!\",";
     }
     json += "\"data\":{";
     json += "\"wifi_ssid\":\"" + wifi_ssid + "\",";

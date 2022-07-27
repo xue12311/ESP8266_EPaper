@@ -1,8 +1,11 @@
 #include <Arduino.h>
 #include <WiFiManager.h>
+#include <WiFiConfigureParameter.h>
 
 WiFiManager wifi_manager;
 
+//wifi 连接 超时时间 为 15 秒
+const long wifi_connect_timed_out_time = 15 * 1000;
 
 void setup() {
     Serial.begin(9600);
@@ -23,3 +26,4 @@ void setup() {
 void loop() {
     wifi_manager.onWebServerLoop();
 }
+

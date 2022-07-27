@@ -7,7 +7,6 @@
 
 #include "ArduinoJson.h"
 #include "WString.h"
-#include "WiFiScanConfigureParametric.h"
 
 class WiFiManager {
 public:
@@ -24,7 +23,7 @@ public:
     bool onStartWiFiAPAndWebServer();
 
 
-    void onWebServerLoop();
+    static void onWebServerLoop();
 
 private:
     /**
@@ -41,14 +40,6 @@ private:
     bool onJsonWiFiConfig(String json);
 
     /**
-     * 连接 wifi
-     * @param wifi_ssid wifi 名称
-     * @param wifi_password wifi 密码
-     * @return true 连接成功 false 连接失败
-     */
-    bool onConnectionWiFiChar(char *wifi_ssid, char *wifi_password);
-
-    /**
         * 连接 wifi
         * @param wifi_ssid wifi 名称
         * @param wifi_password wifi 密码
@@ -57,29 +48,37 @@ private:
     bool onConnectionWiFiString(String wifi_ssid, String wifi_password);
 
     /**
+        * 连接 wifi
+        * @param wifi_ssid wifi 名称
+        * @param wifi_password wifi 密码
+        * @return true 连接成功 false 连接失败
+        */
+    bool onConnectionWiFiChar(const char *wifi_ssid, const char *wifi_password);
+
+    /**
      * 能否成功扫描到指定 wifi
      * @return true 扫描到指定wifi ; false 没有扫描到指定wifi
      */
-    bool isSuccessfulScanWiFi(char *wifi_ssid);
+    bool isSuccessfulScanWiFi(String wifi_ssid);
 
     /**
      * 获取当前 wifi连接状态
      * @return
      */
-    String getWiFiStatusString();
+    static String getWiFiStatusString();
 
     /**
      * 获取当前扫描到的 wifi 列表
      * @return
      */
-//    JsonArray getWiFiScanList();
+//    JsonObject getWiFiScanList();
 
     /**
      * 设置 wifi 为 AP模式 接入点模式
      * 设置 wifi名称 密码
      * @return 是否设置成功  true 设置成功 false 设置失败
      */
-    bool onSettingsWifiAP();
+    static bool onSettingsWifiAP();
 
     /**
      * 启用 网络服务 用来 接收 wifi 配置

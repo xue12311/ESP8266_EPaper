@@ -9,8 +9,6 @@
 class WiFiConfigureParameter {
 
 public:
-    WiFiConfigureParameter(char *ssid, char *password);
-
     WiFiConfigureParameter(String ssid, String password);
 
     WiFiConfigureParameter();
@@ -20,7 +18,6 @@ public:
      * @param ssid
      * @param password
      */
-    void saveWiFiConfigure(char *ssid, char *password);
     void saveWiFiConfigure(String ssid, String password);
 
     /**
@@ -32,12 +29,12 @@ public:
 /**
  * 获取 wifi 名称
  */
-    char *getSSID();
+    const char *getSSID();
 
 /**
  * 获取 wifi 密码
  */
-    char *getPassword();
+    const char *getPassword();
 
 /**
  * 获取 wifi 名称
@@ -51,8 +48,8 @@ public:
 
 
 private:
-    char *wifi_ssid;
-    char *wifi_password;
+    String wifi_ssid;
+    String wifi_password;
 };
 
 
