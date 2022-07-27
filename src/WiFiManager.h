@@ -23,7 +23,7 @@ public:
     bool onStartWiFiAPAndWebServer();
 
 
-    static void onWebServerLoop();
+    void onWebServerLoop();
 
 private:
     /**
@@ -65,20 +65,20 @@ private:
      * 获取当前 wifi连接状态
      * @return
      */
-    static String getWiFiStatusString();
+    String getWiFiStatusString();
 
     /**
      * 获取当前扫描到的 wifi 列表
-     * @return
+     * @return  扫描到的wifi列表
      */
-//    JsonObject getWiFiScanList();
+    JsonObject getWiFiScanListJson();
 
     /**
      * 设置 wifi 为 AP模式 接入点模式
      * 设置 wifi名称 密码
      * @return 是否设置成功  true 设置成功 false 设置失败
      */
-    static bool onSettingsWifiAP();
+    bool onSettingsWifiAP();
 
     /**
      * 启用 网络服务 用来 接收 wifi 配置

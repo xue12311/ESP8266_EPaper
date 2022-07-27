@@ -2,6 +2,7 @@
 // WiFi 管理
 //
 #include <WiFiConfigureParameter.h>
+#include <WiFiScanConfigureParametric.h>
 #include <WiFiManager.h>
 #include <LittleFS.h>
 #include <ESP8266WiFi.h>
@@ -55,13 +56,14 @@ WiFiConfigureParameter mWiFiConfig = WiFiConfigureParameter();
   * @return  true 连接成功 false 连接失败
   */
 bool WiFiManager::onConnectWiFiConfigJson() {
-    //判断 wifi 配置 是否有效
-    if (onReadWiFiConfigJsonString() && mWiFiConfig.isValid()) {
-        //设置为 STA 模式
-        WiFi.mode(WIFI_STA);
-        //连接 wifi
-        return onConnectionWiFiString(mWiFiConfig.getSSIDString(), mWiFiConfig.getPasswordString());
-    }
+//    //判断 wifi 配置 是否有效
+//    if (onReadWiFiConfigJsonString() && mWiFiConfig.isValid()) {
+//        //设置为 STA 模式
+//        WiFi.mode(WIFI_STA);
+//        //连接 wifi
+//        return onConnectionWiFiString(mWiFiConfig.getSSIDString(), mWiFiConfig.getPasswordString());
+//    }
+    getWiFiScanListJson();
     return false;
 }
 
@@ -193,15 +195,34 @@ bool WiFiManager::isSuccessfulScanWiFi(String wifi_ssid) {
     return false;
 }
 
-void getWiFiScanList() {
+/**
+ * 获取当前扫描到的 wifi 列表
+ * @return  扫描到的wifi列表
+ */
+JsonObject WiFiManager::getWiFiScanListJson() {
     int n = WiFi.scanNetworks();
     if (n <= 0) {
         Serial.println("未扫描到附件WiFi");
+        JsonObject();
     } else {
+        //按照RSSI分为(-100, -88), [-88, -78), [-78, -67), [-67, -55), [-55, 0) 5 个等级
+        //[-126, -88) 或者 [156, 168) 为 0 格
+        //[-88, -78) 或者 [168, 178) 为 1 格
+        //[-78, -67) 或者 [178, 189) 为 2 格
+        //[-67, -55) 或者 [189, 200) 为 3 格
+        //[-55, 0] 或者 为 4 格
+        JsonArray list = JsonArray();
         for (int i = 0; i < n; i++) {
-            String ssid = WiFi.SSID(i);
-            int rssi = WiFi.RSSI(i);
-            Serial.println("WiFi 扫描 SSID: " + ssid + " RSSI: " + String(rssi));
+            String wifi_ssid = WiFi.SSID(i);
+            int wifi_rssi = WiFi.RSSI(i);
+            if (wifi_ssid != nullptr && wifi_ssid.length() > 0 && wifi_rssi > -100) {
+//                Serial.println("WiFi 扫描 SSID: " + wifi_ssid + " RSSI: " + String(wifi_rssi));
+                JsonObject json = JsonObject();
+                json.createNestedObject("wifi_ssid");
+//                = wifi_ssid;
+//                json.createNestedObject()["wifi_rssi"] = wifi_rssi;
+                list.add(json);
+            }
         }
     }
 }
@@ -269,7 +290,7 @@ bool WiFiManager::onConnectionWiFiChar(const char *wifi_ssid, const char *wifi_p
  * @param wifi_password wifi 密码
  * @return true 连接成功 false 连接失败
  */
-bool WiFiManager::onConnectionWiFiString(const String wifi_ssid, String wifi_password) {
+bool WiFiManager::onConnectionWiFiString(String wifi_ssid, String wifi_password) {
     return onConnectionWiFiChar(wifi_ssid.c_str(), wifi_password.c_str());
 }
 
@@ -347,6 +368,11 @@ String WiFiManager::getWiFiConnectWebRequestJson(String wifi_ssid, String wifi_p
     return json;
 }
 
+/**
+ * 保存 wifi 配置
+ * @param json_wifi_config
+ * @return
+ */
 bool WiFiManager::onSaveWiFiConfigJson(String json_wifi_config) {
     // 启动 LittleFS
     if (!LittleFS.begin()) {
