@@ -2,7 +2,6 @@
 // WiFi 管理
 //
 #include <WiFiConfigureParameter.h>
-#include <WiFiScanConfigureParametric.h>
 #include <WiFiManager.h>
 #include <LittleFS.h>
 #include <ESP8266WiFi.h>
@@ -56,14 +55,14 @@ WiFiConfigureParameter mWiFiConfig = WiFiConfigureParameter();
   * @return  true 连接成功 false 连接失败
   */
 bool WiFiManager::onConnectWiFiConfigJson() {
-//    //判断 wifi 配置 是否有效
-//    if (onReadWiFiConfigJsonString() && mWiFiConfig.isValid()) {
-//        //设置为 STA 模式
-//        WiFi.mode(WIFI_STA);
-//        //连接 wifi
-//        return onConnectionWiFiString(mWiFiConfig.getSSIDString(), mWiFiConfig.getPasswordString());
-//    }
-    getWiFiScanListJson();
+    //判断 wifi 配置 是否有效
+    if (onReadWiFiConfigJsonString() && mWiFiConfig.isValid()) {
+        //设置为 STA 模式
+        WiFi.mode(WIFI_STA);
+        //连接 wifi
+        return onConnectionWiFiString(mWiFiConfig.getSSIDString(), mWiFiConfig.getPasswordString());
+    }
+//    getWiFiScanListJson();
     return false;
 }
 
@@ -199,11 +198,11 @@ bool WiFiManager::isSuccessfulScanWiFi(String wifi_ssid) {
  * 获取当前扫描到的 wifi 列表
  * @return  扫描到的wifi列表
  */
-JsonObject WiFiManager::getWiFiScanListJson() {
+String WiFiManager::getWiFiScanListJson() {
     int n = WiFi.scanNetworks();
     if (n <= 0) {
         Serial.println("未扫描到附件WiFi");
-        JsonObject();
+        return "";
     } else {
         //按照RSSI分为(-100, -88), [-88, -78), [-78, -67), [-67, -55), [-55, 0) 5 个等级
         //[-126, -88) 或者 [156, 168) 为 0 格
@@ -224,6 +223,7 @@ JsonObject WiFiManager::getWiFiScanListJson() {
                 list.add(json);
             }
         }
+        return "";
     }
 }
 
@@ -261,10 +261,10 @@ String WiFiManager::getWiFiStatusString() {
  * @return true 连接成功 false 连接失败
  */
 bool WiFiManager::onConnectionWiFiChar(const char *wifi_ssid, const char *wifi_password) {
-    if (!isSuccessfulScanWiFi(wifi_ssid)) {
-        Serial.println("未扫描到指定 wifi");
-        return false;
-    }
+//    if (!isSuccessfulScanWiFi(wifi_ssid)) {
+//        Serial.println("未扫描到指定 wifi");
+//        return false;
+//    }
     // 连接 wifi
     WiFi.begin(wifi_ssid, wifi_password);
     Serial.print("wifi 连接中");

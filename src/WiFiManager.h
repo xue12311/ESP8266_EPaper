@@ -71,7 +71,7 @@ private:
      * 获取当前扫描到的 wifi 列表
      * @return  扫描到的wifi列表
      */
-    JsonObject getWiFiScanListJson();
+    String getWiFiScanListJson();
 
     /**
      * 设置 wifi 为 AP模式 接入点模式
