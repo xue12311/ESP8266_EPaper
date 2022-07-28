@@ -55,14 +55,14 @@ WiFiConfigureParameter mWiFiConfig = WiFiConfigureParameter();
   * @return  true 连接成功 false 连接失败
   */
 bool WiFiManager::onConnectWiFiConfigJson() {
-    //判断 wifi 配置 是否有效
-    if (onReadWiFiConfigJsonString() && mWiFiConfig.isValid()) {
-        //设置为 STA 模式
-        WiFi.mode(WIFI_STA);
-        //连接 wifi
-        return onConnectionWiFiString(mWiFiConfig.getSSIDString(), mWiFiConfig.getPasswordString());
-    }
-//    getWiFiScanListJson();
+//    //判断 wifi 配置 是否有效
+//    if (onReadWiFiConfigJsonString() && mWiFiConfig.isValid()) {
+//        //设置为 STA 模式
+//        WiFi.mode(WIFI_STA);
+//        //连接 wifi
+//        return onConnectionWiFiString(mWiFiConfig.getSSIDString(), mWiFiConfig.getPasswordString());
+//    }
+    getWiFiScanListJson();
     return false;
 }
 
@@ -214,14 +214,20 @@ String WiFiManager::getWiFiScanListJson() {
         for (int i = 0; i < n; i++) {
             String wifi_ssid = WiFi.SSID(i);
             int wifi_rssi = WiFi.RSSI(i);
-            if (wifi_ssid != nullptr && wifi_ssid.length() > 0 && wifi_rssi > -100) {
+//            if (wifi_ssid != nullptr && wifi_ssid.length() > 0 && wifi_rssi > -100) {
 //                Serial.println("WiFi 扫描 SSID: " + wifi_ssid + " RSSI: " + String(wifi_rssi));
-                JsonObject json = JsonObject();
-                json.createNestedObject("wifi_ssid");
+//                JsonObject json = JsonObject();
+//                json.createNestedObject("wifi_ssid");
 //                = wifi_ssid;
 //                json.createNestedObject()["wifi_rssi"] = wifi_rssi;
-                list.add(json);
-            }
+//                list.add(json);
+            StaticJsonDocument<256> doc;
+            JsonObject root = doc.to<JsonObject>();
+            root["city"] = "Paris";
+            JsonObject weather = root.createNestedObject("weather");
+            weather["temp"] = 14.2;
+            weather["cond"] = "cloudy";
+            serializeJsonPretty(root, Serial);
         }
         return "";
     }
