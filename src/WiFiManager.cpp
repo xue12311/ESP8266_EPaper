@@ -210,25 +210,37 @@ String WiFiManager::getWiFiScanListJson() {
         //[-78, -67) 或者 [178, 189) 为 2 格
         //[-67, -55) 或者 [189, 200) 为 3 格
         //[-55, 0] 或者 为 4 格
-        JsonArray list = JsonArray();
+
+        DynamicJsonDocument doc(1024);
+        JsonArray wifi_list = doc.createNestedArray("wifi_list");
         for (int i = 0; i < n; i++) {
             String wifi_ssid = WiFi.SSID(i);
             int wifi_rssi = WiFi.RSSI(i);
-//            if (wifi_ssid != nullptr && wifi_ssid.length() > 0 && wifi_rssi > -100) {
+            int wifi_grade = 0;
+            //信号等级
+            if ((wifi_rssi >= -126 && wifi_rssi < -88) || (wifi_rssi >= 156 && wifi_rssi < 168)) {
+                wifi_grade = 0;
+            } else if ((wifi_rssi >= -88 && wifi_rssi < -78) || (wifi_rssi >= 168 && wifi_rssi < 178)) {
+                wifi_grade = 1;
+            } else if ((wifi_rssi >= -78 && wifi_rssi < -67) || (wifi_rssi >= 178 && wifi_rssi < 189)) {
+                wifi_grade = 2;
+            } else if ((wifi_rssi >= -67 && wifi_rssi < -55) || (wifi_rssi >= 189 && wifi_rssi < 200)) {
+                wifi_grade = 3;
+            } else if (wifi_rssi >= -55 && wifi_rssi <= 0) {
+                wifi_grade = 4;
+            }
+            if (wifi_ssid != nullptr && wifi_ssid.length() > 0 && wifi_rssi > -100) {
 //                Serial.println("WiFi 扫描 SSID: " + wifi_ssid + " RSSI: " + String(wifi_rssi));
-//                JsonObject json = JsonObject();
-//                json.createNestedObject("wifi_ssid");
-//                = wifi_ssid;
-//                json.createNestedObject()["wifi_rssi"] = wifi_rssi;
-//                list.add(json);
-            StaticJsonDocument<256> doc;
-            JsonObject root = doc.to<JsonObject>();
-            root["city"] = "Paris";
-            JsonObject weather = root.createNestedObject("weather");
-            weather["temp"] = 14.2;
-            weather["cond"] = "cloudy";
-            serializeJsonPretty(root, Serial);
+                JsonObject wifi_scann = wifi_list.createNestedObject();
+                wifi_scann["wifi_ssid"] = wifi_ssid;
+                wifi_scann["wifi_rssi"] = wifi_rssi;
+                wifi_scann["wifi_grade"] = wifi_grade;
+
+
+                wifi_list.add(wifi_scann);
+            }
         }
+        serializeJsonPretty(wifi_list, Serial);
         return "";
     }
 }
