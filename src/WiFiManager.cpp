@@ -200,49 +200,46 @@ bool WiFiManager::isSuccessfulScanWiFi(String wifi_ssid) {
  */
 String WiFiManager::getWiFiScanListJson() {
     int n = WiFi.scanNetworks();
+    DynamicJsonDocument doc(1024);
     if (n <= 0) {
-        Serial.println("未扫描到附件WiFi");
-        return "";
+        doc["code"] = 201;
+        doc["msg"] = "未扫描到附件WiFi!";
     } else {
-        //按照RSSI分为(-100, -88), [-88, -78), [-78, -67), [-67, -55), [-55, 0) 5 个等级
-        //[-126, -88) 或者 [156, 168) 为 0 格
-        //[-88, -78) 或者 [168, 178) 为 1 格
-        //[-78, -67) 或者 [178, 189) 为 2 格
-        //[-67, -55) 或者 [189, 200) 为 3 格
-        //[-55, 0] 或者 为 4 格
-
-        DynamicJsonDocument doc(1024);
-        JsonArray wifi_list = doc.createNestedArray("wifi_list");
+        doc["code"] = 200;
+        doc["msg"] = "扫描成功!";
+        JsonObject data = doc.createNestedObject("data");
+        JsonArray wifi_list = data.createNestedArray("wifi_list");
+        JsonObject wifi_scann = wifi_list.createNestedObject();
         for (int i = 0; i < n; i++) {
             String wifi_ssid = WiFi.SSID(i);
             int wifi_rssi = WiFi.RSSI(i);
             int wifi_grade = 0;
             //信号等级
-            if ((wifi_rssi >= -126 && wifi_rssi < -88) || (wifi_rssi >= 156 && wifi_rssi < 168)) {
+            if (wifi_rssi < -100) {
                 wifi_grade = 0;
-            } else if ((wifi_rssi >= -88 && wifi_rssi < -78) || (wifi_rssi >= 168 && wifi_rssi < 178)) {
+            } else if (wifi_rssi < -88) {
                 wifi_grade = 1;
-            } else if ((wifi_rssi >= -78 && wifi_rssi < -67) || (wifi_rssi >= 178 && wifi_rssi < 189)) {
+            } else if (wifi_rssi < -78) {
                 wifi_grade = 2;
-            } else if ((wifi_rssi >= -67 && wifi_rssi < -55) || (wifi_rssi >= 189 && wifi_rssi < 200)) {
+            } else if (wifi_rssi < -67) {
                 wifi_grade = 3;
-            } else if (wifi_rssi >= -55 && wifi_rssi <= 0) {
+            } else if (wifi_rssi < 0) {
                 wifi_grade = 4;
             }
-            if (wifi_ssid != nullptr && wifi_ssid.length() > 0 && wifi_rssi > -100) {
+            if (wifi_ssid != nullptr && wifi_ssid.length() > 0) {
 //                Serial.println("WiFi 扫描 SSID: " + wifi_ssid + " RSSI: " + String(wifi_rssi));
-                JsonObject wifi_scann = wifi_list.createNestedObject();
                 wifi_scann["wifi_ssid"] = wifi_ssid;
                 wifi_scann["wifi_rssi"] = wifi_rssi;
                 wifi_scann["wifi_grade"] = wifi_grade;
-
-
                 wifi_list.add(wifi_scann);
             }
         }
-        serializeJsonPretty(wifi_list, Serial);
-        return "";
     }
+    String str_json;
+    serializeJsonPretty(doc, str_json);
+    doc.clear();
+    Serial.println(str_json);
+    return str_json;
 }
 
 
