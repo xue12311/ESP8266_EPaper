@@ -3,41 +3,11 @@
 //
 #include <WiFiConfigureParameter.h>
 #include <WiFiManager.h>
+#include <BasicConfigure.h>
 #include <LittleFS.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <ArduinoJson.h>
-
-
-/**
- * AP 模式  WiFi 的 ip地址
- */
-IPAddress wifi_ap_local_ip(192, 168, 4, 22);
-/**
- * AP 模式  WiFi 的 网关IP地址
- */
-IPAddress wifi_ap_gateway(192, 168, 4, 9);
-/**
- * AP 模式  WiFi 的 子网掩码
- */
-IPAddress wifi_ap_subnet(255, 255, 255, 0);
-
-/**
- * AP 模式  WiFi 名称
- */
-const char *ap_wifi_ssid = "ESP8266 e-Paper";
-
-/**
- * AP 模式  WiFi 密码
- */
-const char *ap_wifi_password = "12345678";
-
-
-// wifi 信息 保存地址
-const char *save_wifi_config_file = "/wifi_config.json";
-
-//wifi 连接 超时时间 为 15 秒
-const long wifi_connect_timed_out_time = 15 * 1000;
 
 // 建立ESP8266WebServer对象，对象名称为esp8266_server
 // 括号中的数字是网路服务器响应http请求的端口号
@@ -46,6 +16,7 @@ ESP8266WebServer webServer(80);
 
 // ESP8266 WebServer 是否已经启用
 bool isWebServerEnable = false;
+
 
 //本地 wifi 配置
 WiFiConfigureParameter mWiFiConfig = WiFiConfigureParameter();
@@ -295,7 +266,10 @@ bool WiFiManager::onCreateWebServer() {
             //保存 wifi 配置
             onSaveWiFiConfigJson(json);
             //mqtt 连接
-            onConnectMqttService();
+            if (onConnectMqttService()) {
+                //mqtt 订阅
+                onSubscribeMqttTopic();
+            }
         }
     });
     //扫描设备可用 wifi 列表
@@ -334,7 +308,9 @@ String WiFiManager::getWiFiConnectWebRequestJson(String wifi_ssid, String wifi_p
     data["wifi_status_name"] = getWiFiStatusString(WiFi.status());
     data["wifi_ssid"] = wifi_ssid;
     data["wifi_password"] = wifi_password;
-    data["wifi_local_ip"] = WiFi.localIP().toString();
+    if (isSuccess) {
+        data["wifi_local_ip"] = WiFi.localIP().toString();
+    }
     data["device_mac"] = WiFi.macAddress();
     data["device_chip_id"] = ESP.getChipId();
     String str_json;
@@ -409,4 +385,12 @@ String WiFiManager::getWiFiScanListJson() {
     serializeJsonPretty(doc, str_json);
     doc.clear();
     return str_json;
+}
+
+/**
+ * wifi 是否 连接成功
+ * @return true: wifi 连接成功  false: wifi 连接失败
+ */
+bool WiFiManager::isWiFiConnected() {
+    return WiFi.status() == WL_CONNECTED;
 }

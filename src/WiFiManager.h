@@ -17,11 +17,21 @@ public:
     bool onConnectWiFiConfigJson();
 
     /**
+     * wifi 是否已经连接
+     * @return true 已连接wifi  false 未连接wifi
+     */
+    bool isWiFiConnected();
+
+    /**
      * 连接 mqtt 服务
      * @return true 连接成功 false 连接失败
      */
     static bool onConnectMqttService();
 
+    /**
+     * 订阅 mqtt主题
+     */
+    void onSubscribeMqttTopic();
 
     /**
      * 设置 wifi 为 AP 模式,并启用网络服务
@@ -33,6 +43,7 @@ public:
     void onWebServerLoop();
 
 private:
+
     /**
      * 读取 本地 wifi 配置的 json 数据
      * @return true 读取成功  false 读取失败

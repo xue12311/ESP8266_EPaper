@@ -7,6 +7,7 @@
 
 
 #include <Arduino.h>
+#include <ESP8266WiFi.h>
 
 class MQTTManager {
 
@@ -36,10 +37,10 @@ public:
 //     */
 //    bool onPushMqttMessage();
 
-//    /**
-//     * 订阅 MQTT 主题
-//     */
-//    void onSubscribeMqttTopic();
+    /**
+     * 订阅 MQTT 主题
+     */
+    void onSubscribeMqttTopic();
 
     /**
     * mqtt 保持 心跳连接
@@ -47,6 +48,18 @@ public:
     void onMQTTServerLoop();
 
 private:
+
+    /**
+     * 订阅 清除wifi配置
+     * @return  true:订阅成功  false:订阅失败
+     */
+    bool onSubscribeTopicsRemoveWifiConfigure();
+
+    /**
+     * 清除 本地 wifi 配置
+     */
+    static bool onClearLocalWifiConfigure();
+
 };
 
 
