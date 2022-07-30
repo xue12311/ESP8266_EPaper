@@ -7,7 +7,7 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <ArduinoJson.h>
-#include <list>
+
 
 /**
  * AP 模式  WiFi 的 ip地址
@@ -55,14 +55,13 @@ WiFiConfigureParameter mWiFiConfig = WiFiConfigureParameter();
   * @return  true 连接成功 false 连接失败
   */
 bool WiFiManager::onConnectWiFiConfigJson() {
-//    //判断 wifi 配置 是否有效
-//    if (onReadWiFiConfigJsonString() && mWiFiConfig.isValid()) {
-//        //设置为 STA 模式
-//        WiFi.mode(WIFI_STA);
-//        //连接 wifi
-//        return onConnectionWiFiString(mWiFiConfig.getSSIDString(), mWiFiConfig.getPasswordString());
-//    }
-    getWiFiScanListJson();
+    //判断 wifi 配置 是否有效
+    if (onReadWiFiConfigJsonString() && mWiFiConfig.isValid()) {
+        //设置为 STA 模式
+        WiFi.mode(WIFI_STA);
+        //连接 wifi
+        return onConnectionWiFiString(mWiFiConfig.getSSIDString(), mWiFiConfig.getPasswordString());
+    }
     return false;
 }
 
@@ -194,75 +193,35 @@ bool WiFiManager::isSuccessfulScanWiFi(String wifi_ssid) {
     return false;
 }
 
-/**
- * 获取当前扫描到的 wifi 列表
- * @return  扫描到的wifi列表
- */
-String WiFiManager::getWiFiScanListJson() {
-    int n = WiFi.scanNetworks();
-    DynamicJsonDocument doc(1024);
-    if (n <= 0) {
-        doc["code"] = 201;
-        doc["msg"] = "未扫描到附件WiFi!";
-    } else {
-        doc["code"] = 200;
-        doc["msg"] = "扫描成功!";
-        JsonObject data = doc.createNestedObject("data");
-        JsonArray wifi_list = data.createNestedArray("wifi_list");
-        JsonObject wifi_scann = wifi_list.createNestedObject();
-        for (int i = 0; i < n; i++) {
-            String wifi_ssid = WiFi.SSID(i);
-            int wifi_rssi = WiFi.RSSI(i);
-            int wifi_grade = 0;
-            //信号等级
-            if (wifi_rssi < -100) {
-                wifi_grade = 0;
-            } else if (wifi_rssi < -88) {
-                wifi_grade = 1;
-            } else if (wifi_rssi < -78) {
-                wifi_grade = 2;
-            } else if (wifi_rssi < -67) {
-                wifi_grade = 3;
-            } else if (wifi_rssi < 0) {
-                wifi_grade = 4;
-            }
-            if (wifi_ssid != nullptr && wifi_ssid.length() > 0) {
-//                Serial.println("WiFi 扫描 SSID: " + wifi_ssid + " RSSI: " + String(wifi_rssi));
-                wifi_scann["wifi_ssid"] = wifi_ssid;
-                wifi_scann["wifi_rssi"] = wifi_rssi;
-                wifi_scann["wifi_grade"] = wifi_grade;
-                wifi_list.add(wifi_scann);
-            }
-        }
-    }
-    String str_json;
-    serializeJsonPretty(doc, str_json);
-    doc.clear();
-    Serial.println(str_json);
-    return str_json;
-}
-
 
 /**
  * 获取 wifi 当前状态
  * @return
  */
 String WiFiManager::getWiFiStatusString() {
-    if (WiFi.status() == WL_CONNECTED) {
+    return getWiFiStatusString(WiFi.status());
+}
+
+/**
+ * 获取 wifi 当前状态
+ * @return
+ */
+String WiFiManager::getWiFiStatusString(int status) {
+    if (status == WL_CONNECTED) {
         return "wifi 连接成功";
-    } else if (WiFi.status() == WL_CONNECT_FAILED) {
+    } else if (status == WL_CONNECT_FAILED) {
         return "wifi 连接失败";
-    } else if (WiFi.status() == WL_CONNECTION_LOST) {
+    } else if (status == WL_CONNECTION_LOST) {
         return "wifi 连接丢失";
-    } else if (WiFi.status() == WL_DISCONNECTED) {
+    } else if (status == WL_DISCONNECTED) {
         return "wifi 未连接";
-    } else if (WiFi.status() == WL_NO_SSID_AVAIL) {
+    } else if (status == WL_NO_SSID_AVAIL) {
         return "wifi 没有找到设定的SSID的网络";
-    } else if (WiFi.status() == WL_IDLE_STATUS) {
+    } else if (status == WL_IDLE_STATUS) {
         return "wifi 正在尝试连接";
-    } else if (WiFi.status() == WL_SCAN_COMPLETED) {
+    } else if (status == WL_SCAN_COMPLETED) {
         return "wifi 网络扫描完毕";
-    } else if (WiFi.status() == WL_NO_SHIELD) {
+    } else if (status == WL_NO_SHIELD) {
         return "wifi 没有找到可用设备";
     } else {
         return "wifi 未知状态";
@@ -276,10 +235,6 @@ String WiFiManager::getWiFiStatusString() {
  * @return true 连接成功 false 连接失败
  */
 bool WiFiManager::onConnectionWiFiChar(const char *wifi_ssid, const char *wifi_password) {
-//    if (!isSuccessfulScanWiFi(wifi_ssid)) {
-//        Serial.println("未扫描到指定 wifi");
-//        return false;
-//    }
     // 连接 wifi
     WiFi.begin(wifi_ssid, wifi_password);
     Serial.print("wifi 连接中");
@@ -339,7 +294,16 @@ bool WiFiManager::onCreateWebServer() {
             isWebServerEnable = false;
             //保存 wifi 配置
             onSaveWiFiConfigJson(json);
+            //mqtt 连接
+            onConnectMqttService();
         }
+    });
+    //扫描设备可用 wifi 列表
+    webServer.on("/scann_wifi_list", HTTP_GET, [this]() {
+        //请求响应 json
+        String json = getWiFiScanListJson();
+        Serial.println("请求响应 :" + json);
+        webServer.send(200, "application/json", json);
     });
     //处理404情况
     webServer.onNotFound([]() {
@@ -362,25 +326,21 @@ bool WiFiManager::onCreateWebServer() {
   * @return json
   */
 String WiFiManager::getWiFiConnectWebRequestJson(String wifi_ssid, String wifi_password, bool isSuccess) {
-    String json = "{";
-    if (isSuccess) {
-        json += "\"code\":200,";
-        json += "\"msg\":\"wifi 连接成功\",";
-    } else {
-        json += "\"code\":201,";
-        json += "\"msg\":\"";
-        json += getWiFiStatusString();
-        json += ",请重试!\",";
-    }
-    json += "\"data\":{";
-    json += "\"wifi_ssid\":\"" + wifi_ssid + "\",";
-    json += "\"wifi_password\":\"" + wifi_password + "\",";
-    if (isSuccess) {
-        json += "\"wifi_local_ip\":\"" + WiFi.localIP().toString() + "\",";
-    }
-    json += "\"device_mac\":\"" + WiFi.macAddress() + "\"";
-    json += "}}";
-    return json;
+    DynamicJsonDocument doc(500);
+    doc["code"] = isSuccess ? 200 : 201;
+    doc["msg"] = isSuccess ? "WiFi 连接成功!" : "WiFi 连接失败!";
+    JsonObject data = doc.createNestedObject("data");
+    data["wifi_status"] = WiFi.status();
+    data["wifi_status_name"] = getWiFiStatusString(WiFi.status());
+    data["wifi_ssid"] = wifi_ssid;
+    data["wifi_password"] = wifi_password;
+    data["wifi_local_ip"] = WiFi.localIP().toString();
+    data["device_mac"] = WiFi.macAddress();
+    data["device_chip_id"] = ESP.getChipId();
+    String str_json;
+    serializeJsonPretty(doc, str_json);
+    doc.clear();
+    return str_json;
 }
 
 /**
@@ -399,4 +359,54 @@ bool WiFiManager::onSaveWiFiConfigJson(String json_wifi_config) {
     file.close();
     Serial.println("wifi 配置保存成功.");
     return true;
+}
+
+
+/**
+ * 获取当前扫描到的 wifi 列表
+ * @return  扫描到的wifi列表
+ */
+String WiFiManager::getWiFiScanListJson() {
+    int n = WiFi.scanNetworks();
+    DynamicJsonDocument doc(1024);
+    if (n <= 0) {
+        doc["code"] = 201;
+        doc["msg"] = "未扫描到附件WiFi!";
+    } else {
+        doc["code"] = 200;
+        doc["msg"] = "WiFi扫描成功!";
+        JsonObject data = doc.createNestedObject("data");
+        data["device_mac"] = WiFi.macAddress();
+        data["device_chip_id"] = ESP.getChipId();
+        JsonArray wifi_list = data.createNestedArray("wifi_list");
+        JsonObject wifi_scann = wifi_list.createNestedObject();
+        for (int i = 0; i < n; i++) {
+            String wifi_ssid = WiFi.SSID(i);
+            int wifi_rssi = WiFi.RSSI(i);
+            int wifi_grade = 0;
+            //信号等级
+            if (wifi_rssi < -100) {
+                wifi_grade = 0;
+            } else if (wifi_rssi < -88) {
+                wifi_grade = 1;
+            } else if (wifi_rssi < -78) {
+                wifi_grade = 2;
+            } else if (wifi_rssi < -67) {
+                wifi_grade = 3;
+            } else if (wifi_rssi < 0) {
+                wifi_grade = 4;
+            }
+            if (wifi_ssid != nullptr && wifi_ssid.length() > 0) {
+//                Serial.println("WiFi 扫描 SSID: " + wifi_ssid + " RSSI: " + String(wifi_rssi));
+                wifi_scann["wifi_ssid"] = wifi_ssid;
+                wifi_scann["wifi_rssi"] = wifi_rssi;
+                wifi_scann["wifi_grade"] = wifi_grade;
+                wifi_list.add(wifi_scann);
+            }
+        }
+    }
+    String str_json;
+    serializeJsonPretty(doc, str_json);
+    doc.clear();
+    return str_json;
 }

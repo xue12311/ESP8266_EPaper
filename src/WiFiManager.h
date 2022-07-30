@@ -17,6 +17,13 @@ public:
     bool onConnectWiFiConfigJson();
 
     /**
+     * 连接 mqtt 服务
+     * @return true 连接成功 false 连接失败
+     */
+    static bool onConnectMqttService();
+
+
+    /**
      * 设置 wifi 为 AP 模式,并启用网络服务
      * @return true 设置成功，false 设置失败
      */
@@ -67,11 +74,8 @@ private:
      */
     String getWiFiStatusString();
 
-    /**
-     * 获取当前扫描到的 wifi 列表
-     * @return  扫描到的wifi列表
-     */
-    String getWiFiScanListJson();
+    String getWiFiStatusString(int status);
+
 
     /**
      * 设置 wifi 为 AP模式 接入点模式
@@ -100,6 +104,11 @@ private:
      */
     bool onSaveWiFiConfigJson(String json_wifi_config);
 
+    /**
+     * 获取当前扫描到的 wifi 列表
+     * @return  扫描到的wifi列表
+     */
+    String getWiFiScanListJson();
 
 };
 
