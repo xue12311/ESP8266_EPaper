@@ -19,16 +19,19 @@ void setup() {
     if (wifi_manager.onConnectWiFiConfigJson()) {
         Serial.println("缓存 连接 wifi 成功.");
         //连接 mqtt 成功
-        if(wifi_manager.onConnectMqttService()){
+        if (wifi_manager.onConnectMqttService()) {
             //订阅 mqtt 主题
             wifi_manager.onSubscribeMqttTopic();
         }
-    } else {
+    } else {//缓存 连接 wifi 失败
         Serial.println("缓存 连接 wifi 失败.");
-        if (wifi_manager.onStartWiFiAPAndWebServer()) {
-            Serial.println("启用网络服务成功.");
-        } else {
-            Serial.println("启用网络服务失败.");
+        //wifi连接
+        if (wifi_manager.onSmartConfigWiFi()) {
+            //连接 mqtt 成功
+            if (wifi_manager.onConnectMqttService()) {
+                //订阅 mqtt 主题
+                wifi_manager.onSubscribeMqttTopic();
+            }
         }
     }
 }
@@ -37,8 +40,6 @@ void loop() {
     //wifi 连接成功
     if (wifi_manager.isWiFiConnected()) {
         mqtt_manager.onMQTTServerLoop();
-    } else {
-        wifi_manager.onWebServerLoop();
     }
 }
 

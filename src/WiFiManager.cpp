@@ -6,20 +6,44 @@
 #include <BasicConfigure.h>
 #include <LittleFS.h>
 #include <ESP8266WiFi.h>
-#include <ESP8266WebServer.h>
 #include <ArduinoJson.h>
-
-// 建立ESP8266WebServer对象，对象名称为esp8266_server
-// 括号中的数字是网路服务器响应http请求的端口号
-// 网络服务器标准http端口号为80，因此这里使用80为端口号
-ESP8266WebServer webServer(80);
-
-// ESP8266 WebServer 是否已经启用
-bool isWebServerEnable = false;
 
 
 //本地 wifi 配置
 WiFiConfigureParameter mWiFiConfig = WiFiConfigureParameter();
+
+/**
+ * 配置 wifi
+ */
+bool WiFiManager::onSmartConfigWiFi() {
+    WiFi.mode(WIFI_STA);
+    WiFi.beginSmartConfig();
+    Serial.print("wifi 连接中");
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(1000);
+        Serial.print(".");
+        if (WiFi.smartConfigDone()) {
+            Serial.println("已收到 wifi 配置信息");
+            String ssid = WiFi.SSID();
+            String password = WiFi.psk();
+            Serial.println("wifi ssid: " + ssid);
+            Serial.println("wifi password: " + password);
+//            if (WiFi.status() != WL_CONNECTED) {
+//                bool isSuccess = onConnectionWiFiString(ssid, password);
+//                if (isSuccess) {
+//                    Serial.println("wifi 连接成功");
+//                    return onWriteWiFiConfigJsonString();
+//                } else {
+//                    return false;
+//                }
+//            } else {
+                return onWriteWiFiConfigJsonString();
+//            }
+        }
+    }
+    return true;
+}
+
 
 /**
  * 本地 wifi 配置 连接
@@ -36,49 +60,6 @@ bool WiFiManager::onConnectWiFiConfigJson() {
     return false;
 }
 
-/**
- * 循环 wifi 配置
- */
-void WiFiManager::onWebServerLoop() {
-    if (isWebServerEnable) {
-        // 检查http服务器访问
-        webServer.handleClient();
-    }
-}
-
-/**
- * 设置 wifi 为 AP 模式,并启用网络服务
- * @return
- */
-bool WiFiManager::onStartWiFiAPAndWebServer() {
-    isWebServerEnable = false;
-    //设置 wifi 为 AP 模式
-    if (onSettingsWifiAP()) {
-        //启用 网络服务 用来 接收 wifi 配置 的 http 请求
-        return onCreateWebServer();
-    }
-    return false;
-}
-
-/**
-     * 设置 wifi 为 AP模式 接入点模式
-     * 设置 wifi名称 密码
-     * @return 是否设置成功  true 设置成功 false 设置失败
-     */
-bool WiFiManager::onSettingsWifiAP() {
-    //设置为 AP_STA 模式
-    WiFi.mode(WIFI_AP_STA);
-    //配置接入点的IP，网关IP，子网掩码
-    WiFi.softAPConfig(wifi_ap_local_ip, wifi_ap_gateway, wifi_ap_subnet);
-    bool isSuccess = WiFi.softAP(ap_wifi_ssid, ap_wifi_password);
-    Serial.println("wifi 名称 : " + String(ap_wifi_ssid));
-    Serial.println("wifi 密码 : " + String(ap_wifi_password));
-    Serial.println("wifi Ip地址 : " + WiFi.softAPIP().toString());
-    Serial.println("网络IP :" + wifi_ap_local_ip.toString());
-    Serial.println("网关IP :" + wifi_ap_gateway.toString());
-    Serial.println("子网掩码 :" + wifi_ap_subnet.toString());
-    return isSuccess;
-}
 
 /**
  * 读取 本地缓存 wifi 配置
@@ -113,6 +94,37 @@ bool WiFiManager::onReadWiFiConfigJsonString() {
 }
 
 /**
+ * 写入 本地 wifi 配置的 json 数据
+ * @return true 写入成功  false 写入失败
+ */
+bool WiFiManager::onWriteWiFiConfigJsonString() {
+    String ssid = WiFi.SSID();
+    String password = WiFi.psk();
+    String status = getWiFiStatusString(WiFi.status());
+    String local_ip = WiFi.localIP().toString();
+    Serial.println("wifi ssid: " + ssid);
+    Serial.println("wifi password: " + password);
+    Serial.println("wifi status: " + status);
+    Serial.println("wifi local_ip: " + local_ip);
+    DynamicJsonDocument doc(500);
+    doc["code"] = 200;
+    doc["msg"] = "WiFi 连接成功!";
+    JsonObject data = doc.createNestedObject("data");
+    data["wifi_status"] = WiFi.status();
+    data["wifi_status_name"] = status;
+    data["wifi_ssid"] = ssid;
+    data["wifi_password"] = password;
+    data["wifi_local_ip"] = local_ip;
+    data["device_mac"] = WiFi.macAddress();
+    data["device_chip_id"] = ESP.getChipId();
+    String str_json;
+    serializeJsonPretty(doc, str_json);
+    doc.clear();
+    //保存 wifi 配置
+    return onSaveWiFiConfigJson(str_json);
+}
+
+/**
  * 解析 wifi 配置 json
  * @param json
  * @return
@@ -140,25 +152,6 @@ bool WiFiManager::onJsonWiFiConfig(String json) {
             Serial.println("json 解析 wifi名称 : " + data_wifi_ssid);
             Serial.println("json 解析 wifi密码 : " + data_wifi_password);
             return true;
-        }
-    }
-    return false;
-}
-
-/**
- * 判断 是否扫描到 指定 wifi
- * @param wifi_ssid  指定 wifi 名称
- * @return true 扫描到指定 wifi false 没有扫描到指定 wifi
- */
-bool WiFiManager::isSuccessfulScanWiFi(String wifi_ssid) {
-    int n = WiFi.scanNetworks();
-    if (n > 0) {
-        for (int i = 0; i < n; i++) {
-            if (wifi_ssid != nullptr && wifi_ssid.length() > 0) {
-                if (WiFi.SSID(i).equals(wifi_ssid)) {
-                    return true;
-                }
-            }
         }
     }
     return false;
@@ -233,90 +226,6 @@ bool WiFiManager::onConnectionWiFiChar(const char *wifi_ssid, const char *wifi_p
  */
 bool WiFiManager::onConnectionWiFiString(String wifi_ssid, String wifi_password) {
     return onConnectionWiFiChar(wifi_ssid.c_str(), wifi_password.c_str());
-}
-
-/**
-  * 启用 网络服务 用来 接收 wifi 配置
-  */
-bool WiFiManager::onCreateWebServer() {
-    //启动网络服务功能
-    webServer.begin();
-//    webServer.keepAlive(true);
-    //设置wifi配置
-    webServer.on("/settings_wifi", HTTP_GET, [this]() {
-        //接收 接口中的 wifi 配置信息
-        String ssid = webServer.arg("wifi_ssid");
-        String password = webServer.arg("wifi_password");
-        Serial.println("收到请求参数 ssid: " + ssid + " password: " + password);
-        //wifi 连接成功
-        bool isWiFiConnectionSucceeded = onConnectionWiFiString(ssid, password);
-        //请求响应 json
-        String json = getWiFiConnectWebRequestJson(ssid, password, isWiFiConnectionSucceeded);
-        Serial.println("请求响应 :" + json);
-        webServer.send(200, "application/json", json);
-        //保存 wifi 配置
-        if (isWiFiConnectionSucceeded) {
-            Serial.println("关闭 wifi 网络服务");
-            //关闭 wifi 接入点模式
-            WiFi.softAPdisconnect(true);
-            //停用 Web Server
-            webServer.stop();
-            //停用 Web Server
-            isWebServerEnable = false;
-            //保存 wifi 配置
-            onSaveWiFiConfigJson(json);
-            //mqtt 连接
-            if (onConnectMqttService()) {
-                //mqtt 订阅
-                onSubscribeMqttTopic();
-            }
-        }
-    });
-    //扫描设备可用 wifi 列表
-    webServer.on("/scann_wifi_list", HTTP_GET, [this]() {
-        //请求响应 json
-        String json = getWiFiScanListJson();
-        Serial.println("请求响应 :" + json);
-        webServer.send(200, "application/json", json);
-    });
-    //处理404情况
-    webServer.onNotFound([]() {
-        String json = "{\"code\":404,\"msg\":\"404错误 请求失败,请重试!\"}";
-        Serial.println("请求响应 :" + json);
-        webServer.send(404, "application/json", json);
-    });
-    webServer.begin();
-    isWebServerEnable = true;
-    Serial.println("网络服务器启动成功.");
-    return true;
-}
-
-
-/**
-  * 响应 wifi连接 请求
-  * @param wifi_ssid  wifi 名称
-  * @param wifi_password   wifi 密码
-  * @param isSuccess  true: wifi 连接成功 false: wifi 连接失败
-  * @return json
-  */
-String WiFiManager::getWiFiConnectWebRequestJson(String wifi_ssid, String wifi_password, bool isSuccess) {
-    DynamicJsonDocument doc(500);
-    doc["code"] = isSuccess ? 200 : 201;
-    doc["msg"] = isSuccess ? "WiFi 连接成功!" : "WiFi 连接失败!";
-    JsonObject data = doc.createNestedObject("data");
-    data["wifi_status"] = WiFi.status();
-    data["wifi_status_name"] = getWiFiStatusString(WiFi.status());
-    data["wifi_ssid"] = wifi_ssid;
-    data["wifi_password"] = wifi_password;
-    if (isSuccess) {
-        data["wifi_local_ip"] = WiFi.localIP().toString();
-    }
-    data["device_mac"] = WiFi.macAddress();
-    data["device_chip_id"] = ESP.getChipId();
-    String str_json;
-    serializeJsonPretty(doc, str_json);
-    doc.clear();
-    return str_json;
 }
 
 /**

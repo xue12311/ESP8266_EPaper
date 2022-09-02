@@ -10,6 +10,13 @@
 
 class WiFiManager {
 public:
+
+    /**
+     * 配置 wifi
+     * @return true 配置成功 false 配置失败
+     */
+    bool onSmartConfigWiFi();
+
     /**
      * 连接 本地缓存中保存的 wifi
      * @return true 连接成功 false 连接失败
@@ -33,15 +40,6 @@ public:
      */
     void onSubscribeMqttTopic();
 
-    /**
-     * 设置 wifi 为 AP 模式,并启用网络服务
-     * @return true 设置成功，false 设置失败
-     */
-    bool onStartWiFiAPAndWebServer();
-
-
-    void onWebServerLoop();
-
 private:
 
     /**
@@ -49,6 +47,12 @@ private:
      * @return true 读取成功  false 读取失败
      */
     bool onReadWiFiConfigJsonString();
+
+    /**
+     * 写入 本地 wifi 配置的 json 数据
+     * @return true 写入成功  false 写入失败
+     */
+    bool onWriteWiFiConfigJsonString();
 
     /**
      * WiFi配置 解析 json
@@ -74,40 +78,12 @@ private:
     bool onConnectionWiFiChar(const char *wifi_ssid, const char *wifi_password);
 
     /**
-     * 能否成功扫描到指定 wifi
-     * @return true 扫描到指定wifi ; false 没有扫描到指定wifi
-     */
-    bool isSuccessfulScanWiFi(String wifi_ssid);
-
-    /**
      * 获取当前 wifi连接状态
      * @return
      */
     String getWiFiStatusString();
 
     String getWiFiStatusString(int status);
-
-
-    /**
-     * 设置 wifi 为 AP模式 接入点模式
-     * 设置 wifi名称 密码
-     * @return 是否设置成功  true 设置成功 false 设置失败
-     */
-    bool onSettingsWifiAP();
-
-    /**
-     * 启用 网络服务 用来 接收 wifi 配置
-     */
-    bool onCreateWebServer();
-
-/**
-  * 响应 wifi连接 请求
-  * @param wifi_ssid  wifi 名称
-  * @param wifi_password   wifi 密码
-  * @param isSuccess  true: wifi 连接成功 false: wifi 连接失败
-  * @return json
-  */
-    String getWiFiConnectWebRequestJson(String wifi_ssid, String wifi_password, bool isSuccess);
 
     /**
      * 保存 wifi 配置
