@@ -21,7 +21,7 @@ void setup() {
     if (wifi_manager.onConnectWiFiConfigJson()) {
         Serial.println("缓存 连接 wifi 成功.");
         //连接 mqtt 成功
-        if (wifi_manager.onConnectMqttService()) {
+        if (WiFiManager::onConnectMqttService()) {
             //订阅 mqtt 主题
             wifi_manager.onSubscribeMqttTopic();
         }
@@ -29,6 +29,11 @@ void setup() {
         Serial.println("缓存 连接 wifi 失败.");
         //wifi连接
         if (wifi_manager.onSmartConfigWiFi()) {
+            //连接 mqtt 成功
+            if (WiFiManager::onConnectMqttService()) {
+                //订阅 mqtt 主题
+                wifi_manager.onSubscribeMqttTopic();
+            }
         }
     }
 }
