@@ -10,7 +10,6 @@
 
 class WiFiManager {
 public:
-
     /**
      * 配置 wifi
      * @return true 配置成功 false 配置失败

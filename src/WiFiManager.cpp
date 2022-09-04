@@ -8,7 +8,6 @@
 #include <ESP8266WiFi.h>
 #include <ArduinoJson.h>
 
-
 //本地 wifi 配置
 WiFiConfigureParameter mWiFiConfig = WiFiConfigureParameter();
 
@@ -19,28 +18,51 @@ bool WiFiManager::onSmartConfigWiFi() {
     WiFi.mode(WIFI_STA);
     WiFi.beginSmartConfig();
     Serial.print("wifi 连接中");
+    int count_time = 0;
     while (WiFi.status() != WL_CONNECTED) {
-        delay(1000);
+        // 改变LED的点亮或者熄灭状态
+        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+        delay(500);
+        count_time += 500;
         Serial.print(".");
         if (WiFi.smartConfigDone()) {
+            Serial.println("");
             Serial.println("已收到 wifi 配置信息");
             String ssid = WiFi.SSID();
             String password = WiFi.psk();
             Serial.println("wifi ssid: " + ssid);
             Serial.println("wifi password: " + password);
-//            if (WiFi.status() != WL_CONNECTED) {
-//                bool isSuccess = onConnectionWiFiString(ssid, password);
-//                if (isSuccess) {
-//                    Serial.println("wifi 连接成功");
-//                    return onWriteWiFiConfigJsonString();
-//                } else {
-//                    return false;
-//                }
-//            } else {
-                return onWriteWiFiConfigJsonString();
-//            }
+            break;
+        } else if (count_time > wifi_smart_config_timed_out_time) {
+            Serial.println("");
+            Serial.println("wifi 配置失败");
+            //熄灭 LED
+            digitalWrite(LED_BUILTIN, HIGH);
+            return false;
         }
     }
+    count_time = 0;
+    Serial.print("wifi 连接中");
+    while (WiFi.status() != WL_CONNECTED) {
+        // 改变LED的点亮或者熄灭状态
+        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+        delay(500);
+        count_time += 500;
+        Serial.print(".");
+        if (count_time > wifi_connect_timed_out_time) {
+            Serial.println("");
+            Serial.println("wifi 连接失败");
+            //熄灭 LED
+            digitalWrite(LED_BUILTIN, HIGH);
+            return false;
+        }
+    }
+    if (WiFi.status() == WL_CONNECTED) {
+        //写入缓存
+        onWriteWiFiConfigJsonString();
+    }
+    //熄灭 LED
+    digitalWrite(LED_BUILTIN, HIGH);
     return true;
 }
 
@@ -204,17 +226,23 @@ bool WiFiManager::onConnectionWiFiChar(const char *wifi_ssid, const char *wifi_p
     Serial.print("wifi 连接中");
     int count_time = 0;
     while (WiFi.status() != WL_CONNECTED) {
+        // 改变LED的点亮或者熄灭状态
+        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
         delay(500);
         count_time += 500;
         Serial.print(".");
         if (count_time > wifi_connect_timed_out_time) {
             Serial.println("");
             Serial.println("wifi 连接失败");
+            //熄灭 LED
+            digitalWrite(LED_BUILTIN, HIGH);
             return false;
         }
     }
     Serial.println("");
     Serial.println("wifi 连接成功");
+    //熄灭 LED
+    digitalWrite(LED_BUILTIN, HIGH);
     return true;
 }
 

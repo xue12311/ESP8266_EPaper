@@ -13,6 +13,8 @@ MQTTManager mqtt_manager;
 
 void setup() {
     Serial.begin(9600);
+    //设置 内置LED引脚 为 输出模式
+    pinMode(LED_BUILTIN, OUTPUT);
     //初始化 mqtt 服务器
     mqtt_manager.initMqttServer();
     //通过 已保存本地的wifi配置 进行wifi连接
@@ -27,11 +29,6 @@ void setup() {
         Serial.println("缓存 连接 wifi 失败.");
         //wifi连接
         if (wifi_manager.onSmartConfigWiFi()) {
-            //连接 mqtt 成功
-            if (wifi_manager.onConnectMqttService()) {
-                //订阅 mqtt 主题
-                wifi_manager.onSubscribeMqttTopic();
-            }
         }
     }
 }
