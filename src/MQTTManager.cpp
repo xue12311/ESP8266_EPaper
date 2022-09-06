@@ -119,16 +119,5 @@ bool MQTTManager::onSubscribeTopicsRemoveWifiConfigure() {
  * @return true 读取成功 false 读取失败
  */
 bool MQTTManager::onClearLocalWifiConfigure() {
-    // 启动 LittleFS
-    if (!LittleFS.begin()) {
-        Serial.println("LittleFS 启用失败.");
-        return false;
-    }
-    // 检查文件是否存在
-    if (!LittleFS.exists(save_wifi_config_file)) {
-        Serial.println("wifi配置 文件不存在.");
-        return true;
-    }
-    // 删除文件
-    return LittleFS.remove(save_wifi_config_file);
+    return onRemoveLocalCacheJsonString(save_wifi_config_file);
 }

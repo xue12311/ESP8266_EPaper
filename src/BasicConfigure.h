@@ -6,31 +6,6 @@
 #define ESP8266_EPAPER_BASICCONFIGURE_H
 
 #include <ESP8266WiFi.h>
-/**
- * AP 模式  WiFi 的 ip地址
- */
-extern IPAddress wifi_ap_local_ip;
-
-/**
- * AP 模式  WiFi 的 网关IP地址
- */
-extern IPAddress wifi_ap_gateway;
-
-/**
- * AP 模式  WiFi 的 子网掩码
- */
-extern IPAddress wifi_ap_subnet;
-
-/**
- * AP 模式  WiFi 名称
- */
-extern const char *ap_wifi_ssid;
-
-/**
- * AP 模式  WiFi 密码
- */
-extern const char *ap_wifi_password;
-
 
 // wifi 信息 保存地址
 extern const char *save_wifi_config_file;
@@ -40,6 +15,9 @@ extern const long wifi_connect_timed_out_time;
 
 //wifi 配置 超时时间
 extern const long wifi_smart_config_timed_out_time;
+
+// 用户配置信息 保存地址
+extern const char *save_user_config_info_file;
 
 //MQTT 服务器 地址
 extern const char *mqtt_server;
@@ -52,5 +30,20 @@ extern const String device_id;
 
 //主题名称  ---  清除 wifi 配置
 extern const String str_topic_device_remove_wifi_configure;
+
+/**
+ * 获取 本地缓存数据
+ */
+String onReadLocalCacheJsonString(const char * file_path);
+
+/**
+ * 保存 本地缓存数据
+ */
+ bool onSaveLocalCacheJsonString(const char * file_path, String jsonString);
+
+ /**
+  * 删除 本地缓存数据
+  */
+ bool onRemoveLocalCacheJsonString(const char * file_path);
 
 #endif //ESP8266_EPAPER_BASICCONFIGURE_H

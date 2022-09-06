@@ -2,32 +2,8 @@
 // 基本 配置 参数
 //
 
+#include <LittleFS.h>
 #include <BasicConfigure.h>
-/**
- * AP 模式  WiFi 的 ip地址
- */
-IPAddress wifi_ap_local_ip(192, 168, 4, 22);
-
-/**
- * AP 模式  WiFi 的 网关IP地址
- */
-IPAddress wifi_ap_gateway(192, 168, 4, 9);
-
-/**
- * AP 模式  WiFi 的 子网掩码
- */
-IPAddress wifi_ap_subnet(255, 255, 255, 0);
-
-/**
- * AP 模式  WiFi 名称
- */
-const char *ap_wifi_ssid = "ESP8266 e-Paper";
-
-/**
- * AP 模式  WiFi 密码
- */
-const char *ap_wifi_password = "12345678";
-
 
 // wifi 信息 保存地址
 const char *save_wifi_config_file = "/wifi_config.json";
@@ -37,6 +13,9 @@ const long wifi_connect_timed_out_time = 15 * 1000;
 //wifi 配置 超时时间 为 30 秒
 const long wifi_smart_config_timed_out_time = 30 * 1000;
 
+
+// 用户配置信息 保存地址
+const char *save_user_config_info_file = "/user_config_info.json";
 
 //MQTT 服务器 地址
 const char *mqtt_server = "test.ranye-iot.net";
@@ -50,3 +29,71 @@ const String device_id = "ay_esp8266-" + String(ESP.getChipId()) + "-" + WiFi.ma
 //主题名称  ---  清除 wifi 配置
 const String str_topic_device_remove_wifi_configure = device_id + "/device/remove_wifi_configure";
 
+
+/**
+ * 获取 本地缓存数据
+ */
+String onReadLocalCacheJsonString(const char *file_path) {
+    // 启动 LittleFS
+    if (!LittleFS.begin()) {
+        Serial.println("LittleFS 启用失败.");
+        return "";
+    }
+    // 检查文件是否存在
+    if (!LittleFS.exists(file_path)) {
+        Serial.println("配置文件 不存在.");
+        return "";
+    }
+    // 打开文件
+    File file = LittleFS.open(file_path, "r");
+    if (!file) {
+        Serial.println("配置文件 打开失败.");
+        return "";
+    }
+    // 读取文件内容
+    String jsonString = file.readString();
+    Serial.println("缓存配置 JSON : " + jsonString);
+    file.close();
+    if (jsonString.length() > 0) {
+        return jsonString;
+    } else {
+        return "";
+    }
+}
+
+
+/**
+ * 保存 本地缓存数据
+ */
+bool onSaveLocalCacheJsonString(const char *file_path, String jsonString) {
+    // 启动 LittleFS
+    if (!LittleFS.begin()) {
+        Serial.println("LittleFS 启用失败.");
+        return false;
+    }
+    File file = LittleFS.open(file_path, "w");
+    file.write(jsonString.c_str());
+    file.close();
+    Serial.println("配置文件 保存成功.");
+    return true;
+}
+
+
+
+/**
+ * 删除 本地缓存数据
+ */
+bool onRemoveLocalCacheJsonString(const char * file_path){
+    // 启动 LittleFS
+    if (!LittleFS.begin()) {
+        Serial.println("LittleFS 启用失败.");
+        return false;
+    }
+    // 检查文件是否存在
+    if (!LittleFS.exists(file_path)) {
+        Serial.println("配置文件不存在.");
+        return true;
+    }
+    // 删除文件
+    return LittleFS.remove(file_path);
+}

@@ -4,7 +4,6 @@
 #include <WiFiConfigureParameter.h>
 #include <WiFiManager.h>
 #include <BasicConfigure.h>
-#include <LittleFS.h>
 #include <ESP8266WiFi.h>
 #include <ArduinoJson.h>
 
@@ -38,6 +37,8 @@ bool WiFiManager::onSmartConfigWiFi() {
             Serial.println("wifi 配置失败");
             //熄灭 LED
             digitalWrite(LED_BUILTIN, HIGH);
+            //停止配网
+            WiFi.stopSmartConfig();
             return false;
         }
     }
@@ -54,6 +55,8 @@ bool WiFiManager::onSmartConfigWiFi() {
             Serial.println("wifi 连接失败");
             //熄灭 LED
             digitalWrite(LED_BUILTIN, HIGH);
+            //停止配网
+            WiFi.stopSmartConfig();
             return false;
         }
     }
@@ -63,6 +66,8 @@ bool WiFiManager::onSmartConfigWiFi() {
     }
     //熄灭 LED
     digitalWrite(LED_BUILTIN, HIGH);
+    //停止配网
+    WiFi.stopSmartConfig();
     return true;
 }
 
@@ -88,26 +93,8 @@ bool WiFiManager::onConnectWiFiConfigJson() {
  * @return true 读取成功 false 读取失败
  */
 bool WiFiManager::onReadWiFiConfigJsonString() {
-    // 启动 LittleFS
-    if (!LittleFS.begin()) {
-        Serial.println("LittleFS 启用失败.");
-        return false;
-    }
-    // 检查文件是否存在
-    if (!LittleFS.exists(save_wifi_config_file)) {
-        Serial.println("wifi配置 文件不存在.");
-        return false;
-    }
-    // 打开文件
-    File file = LittleFS.open(save_wifi_config_file, "r");
-    if (!file) {
-        Serial.println("wifi配置 文件打开失败.");
-        return false;
-    }
     // 读取文件内容
-    String jsonString = file.readString();
-    Serial.println("wifi 缓存 配置 JSON : " + jsonString);
-    file.close();
+    String jsonString = onReadLocalCacheJsonString(save_wifi_config_file);
     if (jsonString.length() > 0) {
         return onJsonWiFiConfig(jsonString);
     } else {
@@ -124,6 +111,7 @@ bool WiFiManager::onWriteWiFiConfigJsonString() {
     String password = WiFi.psk();
     String status = getWiFiStatusString(WiFi.status());
     String local_ip = WiFi.localIP().toString();
+    Serial.println("");
     Serial.println("wifi ssid: " + ssid);
     Serial.println("wifi password: " + password);
     Serial.println("wifi status: " + status);
@@ -241,6 +229,7 @@ bool WiFiManager::onConnectionWiFiChar(const char *wifi_ssid, const char *wifi_p
     }
     Serial.println("");
     Serial.println("wifi 连接成功");
+    Serial.println("wifi ip地址: " + WiFi.localIP().toString());
     //熄灭 LED
     digitalWrite(LED_BUILTIN, HIGH);
     return true;
@@ -262,16 +251,7 @@ bool WiFiManager::onConnectionWiFiString(String wifi_ssid, String wifi_password)
  * @return
  */
 bool WiFiManager::onSaveWiFiConfigJson(String json_wifi_config) {
-    // 启动 LittleFS
-    if (!LittleFS.begin()) {
-        Serial.println("LittleFS 启用失败.");
-        return false;
-    }
-    File file = LittleFS.open(save_wifi_config_file, "w");
-    file.write(json_wifi_config.c_str());
-    file.close();
-    Serial.println("wifi 配置保存成功.");
-    return true;
+    return onSaveLocalCacheJsonString(save_wifi_config_file, json_wifi_config);
 }
 
 
@@ -322,12 +302,4 @@ String WiFiManager::getWiFiScanListJson() {
     serializeJsonPretty(doc, str_json);
     doc.clear();
     return str_json;
-}
-
-/**
- * wifi 是否 连接成功
- * @return true: wifi 连接成功  false: wifi 连接失败
- */
-bool WiFiManager::isWiFiConnected() {
-    return WiFi.status() == WL_CONNECTED;
 }

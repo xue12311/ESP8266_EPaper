@@ -22,22 +22,13 @@ public:
      */
     bool onConnectWiFiConfigJson();
 
-    /**
-     * wifi 是否已经连接
-     * @return true 已连接wifi  false 未连接wifi
-     */
-    bool isWiFiConnected();
 
     /**
      * 连接 mqtt 服务
      * @return true 连接成功 false 连接失败
      */
-    static bool onConnectMqttService();
+    bool onConnectMqttService();
 
-    /**
-     * 订阅 mqtt主题
-     */
-    void onSubscribeMqttTopic();
 
 private:
 
