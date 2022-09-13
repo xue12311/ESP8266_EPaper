@@ -4,7 +4,7 @@
 
 #include "UserConfigureInfo.h"
 #include "BasicConfigure.h"
-
+#include <ArduinoJson.h>
 
 /**
  * 连接 MQTT 服务
@@ -45,8 +45,9 @@ void UserConfigureInfo::onCreateWebServer() {
     if (!isWebServerEnable) {
         //获取 用户配置信息
         webServer.on("/api/user_configure", HTTP_POST, [this]() {
-            String json = onWebResponseUserConfigureInfo();
-            webServer.send(200, "application/json", json);
+            String mqtt = webServer.arg("mqtt");
+            Serial.println("获得参数 mqtt : " + mqtt);
+            onWebResponseUserConfigureInfo();
         });
 
         //处理404情况
@@ -77,7 +78,15 @@ void UserConfigureInfo::onUserConfigureLoop() {
 /**
  * Web 服务 响应 用户配置信息
  */
-String UserConfigureInfo::onWebResponseUserConfigureInfo() {
-    String json = "{\"code\":200,\"msg\":\"请求成功\"}";
-    return json;
+void UserConfigureInfo::onWebResponseUserConfigureInfo() {
+    DynamicJsonDocument doc(500);
+    doc["msg"] = "用户信息配置成功！";
+    JsonObject data = doc.createNestedObject("data");
+    data["wifi_local_ip"] = WiFi.localIP().toString();
+    data["device_mac"] = WiFi.macAddress();
+    data["device_chip_id"] = ESP.getChipId();
+    String str_json;
+    serializeJsonPretty(doc, str_json);
+    doc.clear();
+    webServer.send(200, "application/json", str_json);
 }
