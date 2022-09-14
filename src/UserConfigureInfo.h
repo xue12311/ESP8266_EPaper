@@ -48,7 +48,7 @@ private:
     /**
      * Web 服务 响应 --- 用户配置信息
      */
-    void onWebResponseUserConfigureInfo();
+    bool onWebResponseUserConfigureInfo();
 
 };
 

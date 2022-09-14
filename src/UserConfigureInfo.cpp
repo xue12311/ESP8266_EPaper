@@ -31,10 +31,25 @@ bool UserConfigureInfo::onReadUserConfigureInfoJsonString() {
 }
 
 /**
- * 保持 用户配置信息 的 json 数据
+ * 写入 用户配置信息 的 json 数据
  */
 bool UserConfigureInfo::onWriteUserConfigureInfoJsonString() {
-    return false;
+    DynamicJsonDocument doc(500);
+    doc["code"] = 200;
+    doc["msg"] = "获取 用户配置信息成功!";
+    JsonObject data = doc.createNestedObject("data");
+    JsonObject mqtt_configure = data.createNestedObject("mqtt_configure");
+    mqtt_configure["mqtt_server"] = webServer.arg("mqtt_server");
+    mqtt_configure["mqtt_port"] = webServer.arg("mqtt_port");
+    mqtt_configure["mqtt_username"] = webServer.arg("mqtt_username");
+    mqtt_configure["mqtt_password"] = webServer.arg("mqtt_password");
+    mqtt_configure["mqtt_client_id"] = webServer.arg("mqtt_client_id");
+    mqtt_configure["mqtt_topic_prefix"] = webServer.arg("mqtt_topic_prefix");
+    String str_json;
+    serializeJsonPretty(doc, str_json);
+    doc.clear();
+    Serial.println("保存json : " + str_json);
+    return onSaveLocalCacheJsonString(save_user_config_info_file, str_json);
 }
 
 /**
@@ -45,9 +60,10 @@ void UserConfigureInfo::onCreateWebServer() {
     if (!isWebServerEnable) {
         //获取 用户配置信息
         webServer.on("/api/user_configure", HTTP_POST, [this]() {
-            String mqtt = webServer.arg("mqtt");
-            Serial.println("获得参数 mqtt : " + mqtt);
-            onWebResponseUserConfigureInfo();
+            bool isSuccessSave = onWebResponseUserConfigureInfo();
+            if (isSuccessSave) {
+                onReadUserConfigureInfoJsonString();
+            }
         });
 
         //处理404情况
@@ -78,9 +94,17 @@ void UserConfigureInfo::onUserConfigureLoop() {
 /**
  * Web 服务 响应 用户配置信息
  */
-void UserConfigureInfo::onWebResponseUserConfigureInfo() {
+bool UserConfigureInfo::onWebResponseUserConfigureInfo() {
+    //保存 用户配置信息
+    bool isSave = onWriteUserConfigureInfoJsonString();
     DynamicJsonDocument doc(500);
-    doc["msg"] = "用户信息配置成功！";
+    if (isSave) {
+        doc["code"] = 200;
+        doc["msg"] = "用户信息配置 保存成功！";
+    } else {
+        doc["code"] = 201;
+        doc["msg"] = "用户信息配置 保存失败！";
+    }
     JsonObject data = doc.createNestedObject("data");
     data["wifi_local_ip"] = WiFi.localIP().toString();
     data["device_mac"] = WiFi.macAddress();
@@ -89,4 +113,5 @@ void UserConfigureInfo::onWebResponseUserConfigureInfo() {
     serializeJsonPretty(doc, str_json);
     doc.clear();
     webServer.send(200, "application/json", str_json);
+    return isSave;
 }
