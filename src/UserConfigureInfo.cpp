@@ -4,8 +4,11 @@
 
 #include "UserConfigureInfo.h"
 #include "BasicConfigure.h"
-#include <ArduinoJson.h>
+#include "UserConfigureParameter.h"
+#include "ArduinoJson.h"
 
+//用户配置信息
+UserConfigureParameter mUserConfig = UserConfigureParameter();
 /**
  * 连接 MQTT 服务
  */
@@ -23,11 +26,20 @@ bool UserConfigureInfo::onReadUserConfigureInfoJsonString() {
     // 读取文件内容
     String jsonString = onReadLocalCacheJsonString(save_user_config_info_file);
     if (jsonString.length() > 0) {
-//        return onJsonWiFiConfig(jsonString);
-        return true;
+        return onJsonUserConfig(jsonString);
     } else {
         return false;
     }
+}
+
+
+/**
+ * 用户配置 解析 json
+ * @param json
+ * @return
+ */
+bool UserConfigureInfo::onJsonUserConfig(String json){
+    return true;
 }
 
 /**

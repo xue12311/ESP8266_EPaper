@@ -6,7 +6,6 @@
 #include <BasicConfigure.h>
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-#include <LittleFS.h>
 
 
 WiFiClient wifiClient;

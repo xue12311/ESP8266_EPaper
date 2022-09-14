@@ -32,6 +32,7 @@ private:
     ESP8266WebServer webServer;
     // WebServer 端口
     int webServerPort = 8081;
+
     // ESP8266 WebServer 是否已经启用
     bool isWebServerEnable = false;
 
@@ -41,6 +42,12 @@ private:
     bool onReadUserConfigureInfoJsonString();
 
     /**
+     * 用户配置 解析 json
+     * @param json
+     * @return
+     */
+    bool onJsonUserConfig(String json);
+    /**
      * 写入 本地 用户配置信息 的 json 数据
      */
     bool onWriteUserConfigureInfoJsonString();
@@ -49,6 +56,7 @@ private:
      * Web 服务 响应 --- 用户配置信息
      */
     bool onWebResponseUserConfigureInfo();
+
 
 };
 
