@@ -28,6 +28,9 @@ public:
 
 private:
 
+    //mqtt 是否已经 连接成功
+    bool isMqttConnected = false;
+
     // 建立ESP8266WebServer对象
     ESP8266WebServer webServer;
     // WebServer 端口

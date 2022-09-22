@@ -10,24 +10,13 @@ const char *save_wifi_config_file = "/wifi_config.json";
 
 //wifi 连接 超时时间 为 15 秒
 const long wifi_connect_timed_out_time = 15 * 1000;
+
 //wifi 配置 超时时间 为 30 秒
 const long wifi_smart_config_timed_out_time = 30 * 1000;
 
 
 // 用户配置信息 保存地址
 const char *save_user_config_info_file = "/user_config_info.json";
-
-//MQTT 服务器 地址
-const char *mqtt_server = "test.ranye-iot.net";
-
-//MQTT 服务器 端口
-const uint16_t mqtt_server_port = 1883;
-
-// 设备 唯一值（避免与其它 ESP8266的客户端ID重名）
-const String device_id = "ay_esp8266-" + String(ESP.getChipId()) + "-" + WiFi.macAddress();
-
-//主题名称  ---  清除 wifi 配置
-const String str_topic_device_remove_wifi_configure = device_id + "/device/remove_wifi_configure";
 
 
 /**

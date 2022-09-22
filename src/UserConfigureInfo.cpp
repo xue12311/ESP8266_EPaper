@@ -3,20 +3,32 @@
 //
 
 #include "UserConfigureInfo.h"
+#include "MQTTManager.h"
 #include "BasicConfigure.h"
 #include "UserConfigureParameter.h"
 #include "ArduinoJson.h"
 
 //用户配置信息
 UserConfigureParameter mUserConfig = UserConfigureParameter();
+//MQTT管理器
+MQTTManager mqttManager;
+
 /**
  * 连接 MQTT 服务
  */
 bool UserConfigureInfo::onConnectMQTTServer() {
     //读取 本地 用户配置信息
     if (onReadUserConfigureInfoJsonString()) {
+        //设置 配置信息
+        mqttManager.setUserConfig(mUserConfig);
+        //初始化  MQTT 服务
+        if (mqttManager.initMqttServer()) {
+            isMqttConnected = mqttManager.onConnectMqttServer();
+            return isMqttConnected;
+        }
     }
-    return false;
+    isMqttConnected = false;
+    return isMqttConnected;
 }
 
 /**
@@ -35,11 +47,38 @@ bool UserConfigureInfo::onReadUserConfigureInfoJsonString() {
 
 /**
  * 用户配置 解析 json
- * @param json
- * @return
  */
-bool UserConfigureInfo::onJsonUserConfig(String json){
-    return true;
+bool UserConfigureInfo::onJsonUserConfig(String json) {
+    StaticJsonDocument<500> doc;
+    DeserializationError error = deserializeJson(doc, json);
+    if (error) {
+        Serial.println("json 解析失败 : ");
+        Serial.println(error.f_str());
+        return false;
+    }
+    //请求返回 状态码
+    int code = doc["code"].as<int>(); // 200
+    Serial.println("json 解析  code 状态码 : " + String(code));
+    //请求成功
+    if (code == 200) {
+        //数据详情
+        JsonObject data = doc["data"];
+        if (!data.isNull()) {
+            JsonObject mqtt_configure = data["mqtt_configure"];
+            if (!mqtt_configure.isNull()) {
+                String server = mqtt_configure["mqtt_server"].as<String>();
+                String str_port = mqtt_configure["mqtt_port"].as<String>();
+                uint16_t port = strtol(str_port.c_str(), NULL, 0);
+                String user_name = mqtt_configure["mqtt_username"].as<String>();
+                String pass_word = mqtt_configure["mqtt_password"].as<String>();
+                String client_id = mqtt_configure["mqtt_client_id"].as<String>();
+                String topic_prefix = mqtt_configure["mqtt_topic_prefix"].as<String>();
+                mUserConfig.saveMQTTConfigure(server, port, user_name, pass_word, client_id, topic_prefix);
+            }
+        }
+        return mUserConfig.isValid();
+    }
+    return false;
 }
 
 /**
@@ -100,6 +139,9 @@ void UserConfigureInfo::onUserConfigureLoop() {
     if (isWebServerEnable) {
         // 处理 WebServer 请求
         webServer.handleClient();
+    }
+    if(isMqttConnected){
+        mqttManager.onMQTTServerLoop();
     }
 }
 
