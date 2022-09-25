@@ -24,11 +24,40 @@ bool UserConfigureInfo::onConnectMQTTServer() {
         //初始化  MQTT 服务
         if (mqttManager.initMqttServer()) {
             isMqttConnected = mqttManager.onConnectMqttServer();
+
             return isMqttConnected;
         }
     }
     isMqttConnected = false;
     return isMqttConnected;
+}
+
+/**
+ * 订阅 MQTT 主题
+ */
+bool UserConfigureInfo::onMQTTSubscribeTopics() {
+    if (isMqttConnected) {
+        bool isSubscribeSuccess = mqttManager.onSubscribeTopics(mqtt_subscribe_topict);
+        return isSubscribeSuccess;
+    } else {
+        Serial.println("MQTT 未连接成功 : ");
+        return false;
+    }
+}
+
+
+/**
+* 处理 收到的 MQTT 消息
+* @param topic_name 主题名称
+* @param message 消息内容
+* @param length 消息长度
+*/
+void MQTTManager::onHandleMqttMessage(String topic_name, String message, unsigned int length) {
+    Serial.println("收到 MQTT 消息 : ");
+    Serial.println("主题 : " + topic_name);
+    Serial.println("消息 : " + message);
+    Serial.println("长度 : " + String(length));
+    Serial.println("--------------------------------------------------");
 }
 
 /**
@@ -109,14 +138,13 @@ bool UserConfigureInfo::onWriteUserConfigureInfoJsonString() {
 void UserConfigureInfo::onCreateWebServer() {
     // WebServer 未启用
     if (!isWebServerEnable) {
-        //获取 用户配置信息
+        //设置 用户配置信息
         webServer.on("/api/user_configure", HTTP_POST, [this]() {
             bool isSuccessSave = onWebResponseUserConfigureInfo();
             if (isSuccessSave) {
                 onReadUserConfigureInfoJsonString();
             }
         });
-
         //处理404情况
         webServer.onNotFound([this]() {
             String json = "{\"code\":404,\"msg\":\"404错误 请求失败,请重试!\"}";
@@ -140,7 +168,7 @@ void UserConfigureInfo::onUserConfigureLoop() {
         // 处理 WebServer 请求
         webServer.handleClient();
     }
-    if(isMqttConnected){
+    if (isMqttConnected) {
         mqttManager.onMQTTServerLoop();
     }
 }

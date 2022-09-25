@@ -6,18 +6,21 @@
 #include <BasicConfigure.h>
 
 // wifi 信息 保存地址
-const char *save_wifi_config_file = "/wifi_config.json";
+extern const char *save_wifi_config_file = "/wifi_config.json";
 
 //wifi 连接 超时时间 为 15 秒
-const long wifi_connect_timed_out_time = 15 * 1000;
+extern const long wifi_connect_timed_out_time = 15 * 1000;
 
 //wifi 配置 超时时间 为 30 秒
-const long wifi_smart_config_timed_out_time = 30 * 1000;
+extern const long wifi_smart_config_timed_out_time = 30 * 1000;
 
 
 // 用户配置信息 保存地址
-const char *save_user_config_info_file = "/user_config_info.json";
+extern const char *save_user_config_info_file = "/user_config_info.json";
 
+
+//  MQTT 订阅主题
+extern const String mqtt_subscribe_topict = "esp8266_api";
 
 /**
  * 获取 本地缓存数据
@@ -68,11 +71,10 @@ bool onSaveLocalCacheJsonString(const char *file_path, String jsonString) {
 }
 
 
-
 /**
  * 删除 本地缓存数据
  */
-bool onRemoveLocalCacheJsonString(const char * file_path){
+bool onRemoveLocalCacheJsonString(const char *file_path) {
     // 启动 LittleFS
     if (!LittleFS.begin()) {
         Serial.println("LittleFS 启用失败.");

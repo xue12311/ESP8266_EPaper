@@ -17,6 +17,11 @@ public:
     bool onConnectMQTTServer();
 
     /**
+     * 订阅 MQTT 主题
+     */
+    bool onMQTTSubscribeTopics();
+
+    /**
      * 配置 web 服务 用来 接收 网络请求
      */
     void onCreateWebServer();
@@ -59,7 +64,6 @@ private:
      * Web 服务 响应 --- 用户配置信息
      */
     bool onWebResponseUserConfigureInfo();
-
 
 };
 

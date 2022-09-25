@@ -47,9 +47,9 @@ bool MQTTManager::initMqttServer() {
 * @param message 消息内容
 * @param length 消息长度
 */
-void MQTTManager::onHandleMqttMessage(String topic_name, String message, unsigned int length) {
-    Serial.println("收到 MQTT 消息 [ " + topic_name + " ] : " + message);
-    //清除 wifi 配置
+//void MQTTManager::onHandleMqttMessage(String topic_name, String message, unsigned int length) {
+//    Serial.println("收到 MQTT 消息 [ " + topic_name + " ] : " + message);
+//    //清除 wifi 配置
 //    if (str_topic_device_remove_wifi_configure.equals(topic_name)) {
 //        // 清除 wifi 配置
 //        if (onClearLocalWifiConfigure()) {
@@ -60,7 +60,7 @@ void MQTTManager::onHandleMqttMessage(String topic_name, String message, unsigne
 //            Serial.println("清除 wifi 配置失败");
 //        }
 //    }
-}
+//}
 
 /**
  * 连接 MQTT 服务器
@@ -109,12 +109,27 @@ void MQTTManager::onMQTTServerLoop() {
  * 订阅 MQTT 主题
  * @return  true 订阅成功  false 订阅失败
  */
-bool MQTTManager::onSubscribeTopics(String str_topic_name) {
-    if (mqttClient.subscribe(str_topic_name.c_str())) {
-        Serial.println("订阅主题成功 : " + str_topic_name);
+bool MQTTManager::onSubscribeTopics(String topic) {
+    if (topic == nullptr || topic.isEmpty()) {
+        Serial.println("订阅主题 : " + topic);
+        return false;
+    }
+    String str_topic;
+    String topic_name_prefix = userConfig.getMqttTopicPrefix();
+    if (topic_name_prefix != nullptr && !topic_name_prefix.isEmpty()) {
+        str_topic = topic_name_prefix;
+    }
+    if (str_topic.endsWith("/")) {
+        str_topic = str_topic + String(ESP.getChipId());
+    } else {
+        str_topic = str_topic + "/" + String(ESP.getChipId());
+    }
+    str_topic = str_topic + "/" + topic;
+    if (mqttClient.subscribe(str_topic.c_str())) {
+        Serial.println("订阅主题成功 : " + str_topic);
         return true;
     } else {
-        Serial.println("订阅主题失败 : " + str_topic_name);
+        Serial.println("订阅主题失败 : " + str_topic);
         return false;
     }
 }

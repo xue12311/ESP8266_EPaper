@@ -40,10 +40,15 @@ void loop() {
   * @return true 连接成功 false 连接失败
   */
 bool WiFiManager::onConnectMqttService() {
-    //尝试连接 mqtt 服务器
+    //连接 mqtt 服务器
     bool isSuccess = user_info.onConnectMQTTServer();
+    if (isSuccess) {
+        //订阅 mqtt 主题
+        isSuccess = user_info.onMQTTSubscribeTopics();
+    }
     if (!isSuccess) {
+        //创建web服务
         user_info.onCreateWebServer();
     }
-    return false;
+    return isSuccess;
 }
