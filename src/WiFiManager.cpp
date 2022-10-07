@@ -16,7 +16,7 @@ WiFiConfigureParameter mWiFiConfig = WiFiConfigureParameter();
 bool WiFiManager::onSmartConfigWiFi() {
     WiFi.mode(WIFI_STA);
     WiFi.beginSmartConfig();
-    Serial.print("wifi 配置中");
+    Serial.println("wifi配置中");
     int count_time = 0;
     while (WiFi.status() != WL_CONNECTED) {
         // 改变LED的点亮或者熄灭状态

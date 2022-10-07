@@ -12,7 +12,7 @@ extern const char *save_wifi_config_file = "/wifi_config.json";
 extern const long wifi_connect_timed_out_time = 15 * 1000;
 
 //wifi 配置 超时时间 为 30 秒
-extern const long wifi_smart_config_timed_out_time = 30 * 1000;
+extern const long wifi_smart_config_timed_out_time = 60 * 1000;
 
 
 // 用户配置信息 保存地址
