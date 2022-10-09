@@ -58,6 +58,10 @@ void MQTTManager::onHandleMqttMessage(String topic_name, String message, unsigne
     Serial.println("消息 : " + message);
     Serial.println("长度 : " + String(length));
     Serial.println("--------------------------------------------------");
+    //判断 主题 是否是 本设备的 主题
+    if (mqttManager.getSubscribeTopicsName(mqtt_subscribe_topict).equals(topic_name) && !message.isEmpty()) {
+        Serial.println("json : " + message);
+    }
 }
 
 /**

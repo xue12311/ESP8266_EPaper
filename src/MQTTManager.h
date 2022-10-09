@@ -46,6 +46,11 @@ public:
     bool onSubscribeTopics(String str_topic_name);
 
     /**
+     * 订阅 主题 名称
+     */
+    String getSubscribeTopicsName(String str_topic_name);
+
+    /**
     * mqtt 保持 心跳连接
     */
     void onMQTTServerLoop();

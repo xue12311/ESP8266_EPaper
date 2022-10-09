@@ -110,9 +110,27 @@ void MQTTManager::onMQTTServerLoop() {
  * @return  true 订阅成功  false 订阅失败
  */
 bool MQTTManager::onSubscribeTopics(String topic) {
-    if (topic == nullptr || topic.isEmpty()) {
-        Serial.println("订阅主题 : " + topic);
+    String str_topic = getSubscribeTopicsName(topic);
+    if (str_topic.isEmpty()) {
+        Serial.println("订阅主题 : " + str_topic + " 失败");
         return false;
+    }
+    if (mqttClient.subscribe(str_topic.c_str())) {
+        Serial.println("订阅主题成功 : " + str_topic);
+        return true;
+    } else {
+        Serial.println("订阅主题失败 : " + str_topic);
+        return false;
+    }
+}
+
+
+/**
+ * 订阅 主题 名称
+ */
+String MQTTManager::getSubscribeTopicsName(String str_topic_name) {
+    if (str_topic_name == nullptr || str_topic_name.isEmpty()) {
+        return "";
     }
     String str_topic;
     String topic_name_prefix = userConfig.getMqttTopicPrefix();
@@ -124,13 +142,8 @@ bool MQTTManager::onSubscribeTopics(String topic) {
     } else {
         str_topic = str_topic + "/" + String(ESP.getChipId());
     }
-    str_topic = str_topic + "/" + topic;
-    if (mqttClient.subscribe(str_topic.c_str())) {
-        Serial.println("订阅主题成功 : " + str_topic);
-        return true;
-    } else {
-        Serial.println("订阅主题失败 : " + str_topic);
-        return false;
-    }
+    str_topic = str_topic + "/" + str_topic_name;
+    return str_topic;
 }
+
 
