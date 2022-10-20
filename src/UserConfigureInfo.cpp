@@ -183,7 +183,7 @@ void UserConfigureInfo::onCreateWebServer() {
             }
         });
         //删除配置信息
-        webServer.on(api_clear_device_configure, HTTP_POST, [this]() {
+        webServer.on("/api/"+api_clear_device_configure, HTTP_POST, [this]() {
             onWebResponseClearDeviceConfigureInfo(webServer.arg("type").toInt());
         });
         //处理404情况
