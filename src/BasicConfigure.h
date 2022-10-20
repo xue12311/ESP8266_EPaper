@@ -24,10 +24,9 @@ extern const char *save_user_config_info_file;
 //  MQTT 订阅主题
 extern const String mqtt_subscribe_topict;
 
-//MQTT 主题  类别 : 删除配置信息（wifi配置信息，用户配置信息 ）
-extern const String mqtt_topict_type_delete_configure_info;
 
-
+// api : 删除配置信息（wifi配置信息，用户配置信息 ）
+extern const String api_clear_device_configure;
 /**
  * 获取 本地缓存数据
  */

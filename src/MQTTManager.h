@@ -24,7 +24,13 @@ public:
     * @param message 消息内容
     * @param length 消息长度
     */
-    static void onHandleMqttMessage(String topic_name, String message, unsigned int length);
+    void onHandleMqttMessage(String topic_name, String message, unsigned int length);
+
+    /**
+     * MQTT 消息 解析 json
+     */
+    void onMqttMessageJsonResolve(String json);
+
 
     /**
     * 连接 MQTT 服务器
@@ -65,6 +71,13 @@ private:
     //用户 配置
     UserConfigureParameter userConfig;
 
+
+    /**
+     * 清除配置信息
+      * @param type 0: 清除全部配置信息 1:清除 WIFI 配置信息  2: 清除 MQTT 配置信息
+      * @return
+      */
+    bool onClearDeviceConfigureInfo(int type);
 };
 
 

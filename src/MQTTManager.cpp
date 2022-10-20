@@ -29,7 +29,7 @@ bool MQTTManager::initMqttServer() {
         // 设置MQTT服务器和端口号
         mqttClient.setServer(userConfig.getMqttServer(), userConfig.getMqttPort());
         // 设置MQTT订阅回调函数
-        mqttClient.setCallback([](char *topic, byte *payload, unsigned int length) {
+        mqttClient.setCallback([this](char *topic, byte *payload, unsigned int length) {
             String str_payload;
             for (int i = 0; i < length; i++) {
                 str_payload += (char) payload[i];

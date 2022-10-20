@@ -61,6 +61,39 @@ void MQTTManager::onHandleMqttMessage(String topic_name, String message, unsigne
     //判断 主题 是否是 本设备的 主题
     if (mqttManager.getSubscribeTopicsName(mqtt_subscribe_topict).equals(topic_name) && !message.isEmpty()) {
         Serial.println("json : " + message);
+        //解析 json 字符串
+        onMqttMessageJsonResolve(message);
+    }
+}
+
+/**
+   * MQTT 消息 解析 json
+   */
+void MQTTManager::onMqttMessageJsonResolve(String json) {
+    StaticJsonDocument<1024> doc;
+    DeserializationError error = deserializeJson(doc, json);
+    if (error) {
+        Serial.println("json 解析失败 : ");
+        Serial.println(error.f_str());
+    } else {
+        String api_url = doc["api_url"].as<String>();
+        //数据详情
+        JsonObject data = doc["data"];
+        if (!data.isNull()) {
+            //清除配置信息
+            if (api_clear_device_configure.equals(api_url)) {
+                int type = data["type"].as<int>();
+                //清除配置信息
+                bool isDeleteConfigure = onClearDeviceConfigureInfo(type);
+                if (isDeleteConfigure) {
+                    Serial.println("清除配置信息成功");
+                    //重启设备
+                    ESP.restart();
+                } else {
+                    Serial.println("清除配置信息失败");
+                }
+            }
+        }
     }
 }
 
@@ -200,4 +233,25 @@ bool UserConfigureInfo::onWebResponseUserConfigureInfo() {
     doc.clear();
     webServer.send(200, "application/json", str_json);
     return isSave;
+}
+
+
+/**
+ * 清除配置信息
+ * @param type 0: 清除全部配置信息 1:清除 WIFI 配置信息  2: 清除 MQTT 配置信息
+ */
+bool MQTTManager::onClearDeviceConfigureInfo(int type) {
+    if (type == 0) {
+        Serial.println("删除 全部 配置信息");
+        return onRemoveLocalCacheJsonString(save_wifi_config_file) &&
+               onRemoveLocalCacheJsonString(save_user_config_info_file);
+    } else if (type == 1) {
+        Serial.println("删除 Wifi 配置信息");
+        return onRemoveLocalCacheJsonString(save_wifi_config_file);
+    } else if (type == 2) {
+        Serial.println("删除 MQTT 配置信息");
+        return onRemoveLocalCacheJsonString(save_user_config_info_file);
+    } else {
+        return false;
+    }
 }
