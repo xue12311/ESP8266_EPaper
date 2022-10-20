@@ -66,18 +66,19 @@ public:
      */
     void setUserConfig(UserConfigureParameter userConfig);
 
+/**
+ * 清除配置信息
+  * @param type 0: 清除全部配置信息 1:清除 WIFI 配置信息  2: 清除 MQTT 配置信息
+  * @return
+  */
+bool onClearDeviceConfigureInfo(int type);
+
 private:
 
     //用户 配置
     UserConfigureParameter userConfig;
 
 
-    /**
-     * 清除配置信息
-      * @param type 0: 清除全部配置信息 1:清除 WIFI 配置信息  2: 清除 MQTT 配置信息
-      * @return
-      */
-    bool onClearDeviceConfigureInfo(int type);
 };
 
 

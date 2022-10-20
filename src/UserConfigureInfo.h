@@ -55,6 +55,7 @@ private:
      * @return
      */
     bool onJsonUserConfig(String json);
+
     /**
      * 写入 本地 用户配置信息 的 json 数据
      */
@@ -64,6 +65,11 @@ private:
      * Web 服务 响应 --- 用户配置信息
      */
     bool onWebResponseUserConfigureInfo();
+
+    /**
+      * WebServer 处理函数 删除配置信息
+      */
+    void onWebResponseClearDeviceConfigureInfo(int type);
 
 };
 

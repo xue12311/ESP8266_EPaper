@@ -182,6 +182,10 @@ void UserConfigureInfo::onCreateWebServer() {
                 onReadUserConfigureInfoJsonString();
             }
         });
+        //删除配置信息
+        webServer.on(api_clear_device_configure, HTTP_POST, [this]() {
+            onWebResponseClearDeviceConfigureInfo(webServer.arg("type").toInt());
+        });
         //处理404情况
         webServer.onNotFound([this]() {
             String json = "{\"code\":404,\"msg\":\"404错误 请求失败,请重试!\"}";
@@ -235,6 +239,37 @@ bool UserConfigureInfo::onWebResponseUserConfigureInfo() {
     return isSave;
 }
 
+
+/**
+  * WebServer 处理函数 删除配置信息
+  */
+void UserConfigureInfo::onWebResponseClearDeviceConfigureInfo(int type){
+    //清除配置信息
+    bool isDeleteConfigure = mqttManager.onClearDeviceConfigureInfo(type);
+    DynamicJsonDocument doc(500);
+    if (isDeleteConfigure) {
+        doc["code"] = 200;
+        doc["msg"] = "清除配置信息成功！";
+    } else {
+        doc["code"] = 201;
+        doc["msg"] = "清除配置信息失败！";
+    }
+    JsonObject data = doc.createNestedObject("data");
+    data["wifi_local_ip"] = WiFi.localIP().toString();
+    data["device_mac"] = WiFi.macAddress();
+    data["device_chip_id"] = ESP.getChipId();
+    String str_json;
+    serializeJsonPretty(doc, str_json);
+    doc.clear();
+    webServer.send(200, "application/json", str_json);
+    if (isDeleteConfigure) {
+        Serial.println("清除配置信息成功");
+        //重启设备
+        ESP.restart();
+    } else {
+        Serial.println("清除配置信息失败");
+    }
+}
 
 /**
  * 清除配置信息
