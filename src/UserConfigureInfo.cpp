@@ -175,15 +175,19 @@ bool UserConfigureInfo::onWriteUserConfigureInfoJsonString() {
 void UserConfigureInfo::onCreateWebServer() {
     // WebServer 未启用
     if (!isWebServerEnable) {
-        //设置 用户配置信息
-        webServer.on("/api/user_configure", HTTP_POST, [this]() {
-            bool isSuccessSave = onWebResponseUserConfigureInfo();
+        //获取 开发版信息
+        webServer.on(api_obtain_esp8266_configure, HTTP_POST, [this]() {
+            onWebResponseUserConfigureInfo();
+        });
+        //设置配置信息
+        webServer.on(api_setting_device_configure, HTTP_POST, [this]() {
+            bool isSuccessSave = onWebResponseSettingUserConfigureInfo();
             if (isSuccessSave) {
                 onReadUserConfigureInfoJsonString();
             }
         });
         //删除配置信息
-        webServer.on("/api/"+api_clear_device_configure, HTTP_POST, [this]() {
+        webServer.on(api_clear_device_configure, HTTP_POST, [this]() {
             onWebResponseClearDeviceConfigureInfo(webServer.arg("type").toInt());
         });
         //处理404情况
@@ -215,9 +219,27 @@ void UserConfigureInfo::onUserConfigureLoop() {
 }
 
 /**
- * Web 服务 响应 用户配置信息
+ * Web 服务 响应 获取 esp8266信息
  */
 bool UserConfigureInfo::onWebResponseUserConfigureInfo() {
+    DynamicJsonDocument doc(500);
+    doc["code"] = 200;
+    doc["msg"] = "esp8266开发版信息 获取成功！";
+    JsonObject data = doc.createNestedObject("data");
+    data["wifi_local_ip"] = WiFi.localIP().toString();
+    data["device_mac"] = WiFi.macAddress();
+    data["device_chip_id"] = ESP.getChipId();
+    String str_json;
+    serializeJsonPretty(doc, str_json);
+    doc.clear();
+    webServer.send(200, "application/json", str_json);
+    return true;
+}
+
+/**
+ * Web 服务 响应 保存配置信息
+ */
+bool UserConfigureInfo::onWebResponseSettingUserConfigureInfo() {
     //保存 用户配置信息
     bool isSave = onWriteUserConfigureInfoJsonString();
     DynamicJsonDocument doc(500);
@@ -239,11 +261,10 @@ bool UserConfigureInfo::onWebResponseUserConfigureInfo() {
     return isSave;
 }
 
-
 /**
   * WebServer 处理函数 删除配置信息
   */
-void UserConfigureInfo::onWebResponseClearDeviceConfigureInfo(int type){
+void UserConfigureInfo::onWebResponseClearDeviceConfigureInfo(int type) {
     //清除配置信息
     bool isDeleteConfigure = mqttManager.onClearDeviceConfigureInfo(type);
     DynamicJsonDocument doc(500);

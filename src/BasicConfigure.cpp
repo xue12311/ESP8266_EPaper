@@ -22,8 +22,15 @@ extern const char *save_user_config_info_file = "/user_config_info.json";
 //  MQTT 订阅主题
 extern const String mqtt_subscribe_topict = "esp8266_api";
 
+// api : 获取开发版信息
+extern const String api_obtain_esp8266_configure = "/api/obtain_esp8266_configure";
+
+// api : 设置开发版配置信息（wifi配置信息，用户配置信息 ）
+extern const String api_setting_device_configure = "/api/api_setting_device_configure";
+
 // api : 删除配置信息（wifi配置信息，用户配置信息 ）
-extern const String api_clear_device_configure = "clear_device_configure";
+extern const String api_clear_device_configure = "/api/clear_device_configure";
+
 /**
  * 获取 本地缓存数据
  */

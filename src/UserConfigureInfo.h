@@ -62,9 +62,14 @@ private:
     bool onWriteUserConfigureInfoJsonString();
 
     /**
-     * Web 服务 响应 --- 用户配置信息
+     * WebServer 处理函数 获取 esp8266信息
      */
     bool onWebResponseUserConfigureInfo();
+
+    /**
+     * WebServer 处理函数 设置配置信息
+     */
+    bool onWebResponseSettingUserConfigureInfo();
 
     /**
       * WebServer 处理函数 删除配置信息
